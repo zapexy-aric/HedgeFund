@@ -139,9 +139,9 @@ export default function Dashboard() {
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(parseFloat(amount));
   };
 
@@ -224,7 +224,7 @@ export default function Dashboard() {
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-0">
+        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[88px]">
           <div className="p-4 space-y-4">
             {navItems.map((item) => (
               <Button
@@ -346,7 +346,8 @@ export default function Dashboard() {
                     )}
                     <div className="p-4 flex flex-col flex-grow">
                       <CardTitle className="text-lg font-bold mb-2">{plan.name}</CardTitle>
-                      <div className="text-2xl font-bold text-primary mb-4">{plan.dailyPercentage}%
+                      <div className="text-2xl font-bold text-primary mb-4">
+                        {formatCurrency(((parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage)) / 100).toString())}
                         <span className="text-sm text-gray-500 font-normal"> / day</span>
                       </div>
 

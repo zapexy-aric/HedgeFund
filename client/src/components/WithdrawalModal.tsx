@@ -54,10 +54,10 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) < 110) {
       toast({
         title: "Error",
-        description: "Please enter a valid amount",
+        description: "Minimum withdrawal amount is ₹110",
         variant: "destructive",
       });
       return;
@@ -101,9 +101,9 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(parseFloat(amount));
   };
 
@@ -127,14 +127,14 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="withdrawal-amount">Withdrawal Amount (USD)</Label>
+            <Label htmlFor="withdrawal-amount">Withdrawal Amount (INR)</Label>
             <Input 
               id="withdrawal-amount"
               type="number" 
               placeholder="Enter amount"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              min="1"
+              min="110"
               max={availableBalance}
               step="0.01"
               data-testid="input-withdrawal-amount"
