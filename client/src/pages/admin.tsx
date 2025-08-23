@@ -86,7 +86,8 @@ export default function AdminDashboard() {
     minInvestment: "",
     maxInvestment: "",
     durationDays: "",
-    isPopular: false
+    isPopular: false,
+    imageUrl: ""
   });
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
@@ -176,7 +177,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
-      setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false });
+      setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false, imageUrl: "" });
       toast({ title: "Success", description: "Investment plan created successfully" });
     },
     onError: () => {
@@ -623,6 +624,16 @@ export default function AdminDashboard() {
                         onChange={(e) => setNewPlan(prev => ({ ...prev, durationDays: e.target.value }))}
                         placeholder="30"
                         data-testid="input-plan-duration"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="plan-image-url">Image URL</Label>
+                      <Input
+                        id="plan-image-url"
+                        value={newPlan.imageUrl}
+                        onChange={(e) => setNewPlan(prev => ({ ...prev, imageUrl: e.target.value }))}
+                        placeholder="Enter image URL"
+                        data-testid="input-plan-image-url"
                       />
                     </div>
                     <div className="flex items-center space-x-2">

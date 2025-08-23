@@ -51,6 +51,7 @@ interface InvestmentPlan {
   maxInvestment: string;
   durationDays: number;
   isPopular: boolean;
+  imageUrl?: string;
 }
 
 interface UserInvestment {
@@ -333,38 +334,54 @@ export default function Dashboard() {
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
-                  <Card key={plan.id} className="relative hover:shadow-md transition-shadow duration-200" data-testid={`card-plan-${plan.id}`}>
-                    {plan.isPopular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge className="bg-secondary text-white">Popular</Badge>
-                      </div>
+                  <Card
+                    key={plan.id}
+                    className="relative hover:shadow-lg transition-shadow duration-300 overflow-hidden group"
+                    data-testid={`card-plan-${plan.id}`}
+                  >
+                    {plan.imageUrl && (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                        style={{ backgroundImage: `url(${plan.imageUrl})` }}
+                      />
                     )}
-                    <CardHeader className="text-center">
-                      <CardTitle className="text-xl">{plan.name}</CardTitle>
-                      <div className="text-3xl font-bold text-primary">{plan.dailyPercentage}%</div>
-                      <p className="text-sm text-gray-500">Daily Returns</p>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Minimum Investment</span>
-                        <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
+                    <div className="absolute inset-0 bg-black/50" />
+
+                    <div className="relative z-10 flex flex-col h-full p-6 text-white">
+                      {plan.isPopular && (
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                          <Badge className="bg-secondary text-white">Popular</Badge>
+                        </div>
+                      )}
+
+                      <div className="text-center mb-4">
+                        <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                        <div className="text-4xl font-extrabold text-secondary mt-2">{plan.dailyPercentage}%</div>
+                        <p className="text-sm text-gray-200">Daily Returns</p>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Maximum Investment</span>
-                        <span className="font-semibold">{formatCurrency(plan.maxInvestment)}</span>
+
+                      <div className="space-y-3 mt-auto">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Min Investment</span>
+                          <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Max Investment</span>
+                          <span className="font-semibold">{formatCurrency(plan.maxInvestment)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Duration</span>
+                          <span className="font-semibold">{plan.durationDays} Days</span>
+                        </div>
+                        <Button
+                          className="w-full bg-secondary hover:bg-green-700 text-white"
+                          onClick={() => handlePurchasePlan(plan)}
+                          data-testid={`button-invest-${plan.id}`}
+                        >
+                          Invest Now
+                        </Button>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Duration</span>
-                        <span className="font-semibold">{plan.durationDays} Days</span>
-                      </div>
-                      <Button 
-                        className="w-full" 
-                        onClick={() => handlePurchasePlan(plan)}
-                        data-testid={`button-invest-${plan.id}`}
-                      >
-                        Invest Now
-                      </Button>
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -386,45 +403,53 @@ export default function Dashboard() {
                   const daysLeft = plan ? plan.durationDays - investment.daysCompleted : 0;
                   
                   return (
-                    <Card key={investment.id} data-testid={`card-investment-${investment.id}`}>
-                      <CardContent className="p-6">
+                    <Card key={investment.id} className="relative overflow-hidden" data-testid={`card-investment-${investment.id}`}>
+                      {plan?.imageUrl && (
+                        <div
+                          className="absolute inset-0 bg-cover bg-center"
+                          style={{ backgroundImage: `url(${plan.imageUrl})` }}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/60" />
+
+                      <CardContent className="relative z-10 p-6 text-white">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="text-xl font-semibold text-gray-800">{plan?.name || 'Unknown Plan'}</h3>
-                            <p className="text-gray-500">Purchased on {formatDate(investment.purchaseDate)}</p>
+                            <h3 className="text-2xl font-bold">{plan?.name || 'Unknown Plan'}</h3>
+                            <p className="text-gray-300">Purchased on {formatDate(investment.purchaseDate)}</p>
                           </div>
-                          <Badge variant={investment.status === 'active' ? 'default' : 'secondary'}>
+                          <Badge variant={investment.status === 'active' ? 'default' : 'secondary'} className="bg-secondary text-white">
                             {investment.status}
                           </Badge>
                         </div>
                         
                         <div className="grid md:grid-cols-5 gap-4 mb-4">
-                          <div className="text-center p-4 bg-background rounded-lg">
-                            <p className="text-gray-500 text-sm">Investment Amount</p>
-                            <p className="text-xl font-bold text-gray-800">{formatCurrency(investment.amount)}</p>
+                          <div className="text-center p-4 bg-black/30 rounded-lg">
+                            <p className="text-gray-300 text-sm">Investment Amount</p>
+                            <p className="text-xl font-bold">{formatCurrency(investment.amount)}</p>
                           </div>
-                          <div className="text-center p-4 bg-background rounded-lg">
-                            <p className="text-gray-500 text-sm">Daily Return</p>
-                            <p className="text-xl font-bold text-secondary">{formatCurrency(investment.dailyReturn)}</p>
+                          <div className="text-center p-4 bg-green-500/80 rounded-lg">
+                            <p className="text-white text-sm">Daily Return</p>
+                            <p className="text-xl font-bold text-white">{formatCurrency(investment.dailyReturn)}</p>
                           </div>
-                          <div className="text-center p-4 bg-background rounded-lg">
-                            <p className="text-gray-500 text-sm">Days Left</p>
-                            <p className="text-xl font-bold text-primary">{daysLeft}</p>
+                          <div className="text-center p-4 bg-black/30 rounded-lg">
+                            <p className="text-gray-300 text-sm">Days Left</p>
+                            <p className="text-xl font-bold text-secondary">{daysLeft}</p>
                           </div>
-                          <div className="text-center p-4 bg-background rounded-lg">
-                            <p className="text-gray-500 text-sm">Daily Profit %</p>
-                            <p className="text-xl font-bold text-purple-600">{plan?.dailyPercentage}%</p>
+                           <div className="text-center p-4 bg-black/30 rounded-lg">
+                            <p className="text-gray-300 text-sm">Total Profit</p>
+                            <p className="text-xl font-bold text-green-400">{formatCurrency(investment.totalReturn)}</p>
                           </div>
-                          <div className="text-center p-4 bg-background rounded-lg">
-                            <p className="text-gray-500 text-sm">Net Profit</p>
-                            <p className="text-xl font-bold text-accent">{formatCurrency(investment.totalReturn)}</p>
+                           <div className="text-center p-4 bg-black/30 rounded-lg">
+                            <p className="text-gray-300 text-sm">Progress</p>
+                            <p className="text-xl font-bold">{progress.toFixed(1)}%</p>
                           </div>
                         </div>
                         
                         <div className="space-y-2">
-                          <Progress value={progress} className="h-2" />
-                          <p className="text-sm text-gray-500">
-                            {investment.daysCompleted} of {plan?.durationDays || 0} days completed ({progress.toFixed(1)}%)
+                          <Progress value={progress} className="h-2 bg-white/30 [&>div]:bg-secondary" />
+                          <p className="text-sm text-gray-300 text-right">
+                            {investment.daysCompleted} of {plan?.durationDays || 0} days completed
                           </p>
                         </div>
                       </CardContent>
