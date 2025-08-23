@@ -97,7 +97,7 @@ export default function Dashboard() {
   }, [isAuthenticated, authLoading, toast]);
 
   const { data: user } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
+    queryKey: ["/api/user"],
     enabled: isAuthenticated,
   });
 
@@ -200,7 +200,10 @@ export default function Dashboard() {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => window.location.href = "/api/logout"}
+              onClick={async () => {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+              }}
               data-testid="button-logout"
             >
               <ArrowUp className="h-4 w-4 rotate-45" />

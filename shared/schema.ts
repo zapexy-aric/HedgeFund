@@ -24,14 +24,13 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table for Replit Auth
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  whatsappNumber: varchar("whatsapp_number").notNull().unique(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  whatsappNumber: varchar("whatsapp_number"),
   referralCode: varchar("referral_code"),
   depositBalance: decimal("deposit_balance", { precision: 10, scale: 2 }).default("0.00"),
   withdrawalBalance: decimal("withdrawal_balance", { precision: 10, scale: 2 }).default("0.00"),
@@ -125,6 +124,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+export const loginUserSchema = createInsertSchema(users).pick({
+  whatsappNumber: true,
+  password: true,
+});
+
 export const insertPartnerSchema = createInsertSchema(partners).omit({
   id: true,
   createdAt: true,
@@ -158,7 +162,8 @@ export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalReques
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Partner = typeof partners.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect;

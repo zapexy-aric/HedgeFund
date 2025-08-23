@@ -22,7 +22,12 @@ interface AuthModalsProps {
 export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
+  const [loginData, setLoginData] = useState({
+    whatsappNumber: "",
+    password: "",
+  });
+
+  const [signupData, setSignupData] = useState({
     fullName: "",
     whatsappNumber: "",
     password: "",
@@ -30,40 +35,75 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
     referralCode: "",
   });
 
-  const updateWhatsAppMutation = useMutation({
-    mutationFn: async (data: { whatsappNumber: string; referralCode?: string }) => {
-      await apiRequest("POST", "/api/auth/update-whatsapp", data);
+  const loginMutation = useMutation({
+    mutationFn: async (data: { whatsappNumber: string; password: string }) => {
+      const response = await apiRequest("POST", "/api/login", data);
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
-        description: "Account setup completed successfully!",
+        description: "Logged in successfully!",
       });
       onClose();
-      // Redirect to refresh the page and show dashboard
       window.location.reload();
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to complete account setup",
+        title: "Login Failed",
+        description: error.message || "Invalid WhatsApp number or password",
         variant: "destructive",
       });
     },
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const signupMutation = useMutation({
+    mutationFn: async (data: { whatsappNumber: string; password: string; firstName?: string; lastName?: string; referralCode?: string }) => {
+      const response = await apiRequest("POST", "/api/register", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Success",
+        description: "Account created successfully!",
+      });
+      onClose();
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLoginChange = (field: string, value: string) => {
+    setLoginData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignupChange = (field: string, value: string) => {
+    setSignupData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleLogin = () => {
-    // Redirect to Replit Auth login
-    window.location.href = "/api/login";
+    if (!loginData.whatsappNumber || !loginData.password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    loginMutation.mutate(loginData);
   };
 
   const handleSignup = () => {
-    if (formData.password !== formData.confirmPassword) {
+    if (signupData.password !== signupData.confirmPassword) {
       toast({
         title: "Error",
         description: "Passwords do not match",
@@ -72,22 +112,31 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
       return;
     }
 
-    if (!formData.whatsappNumber) {
+    if (!signupData.whatsappNumber || !signupData.password) {
       toast({
         title: "Error",
-        description: "WhatsApp number is required",
+        description: "WhatsApp number and password are required",
         variant: "destructive",
       });
       return;
     }
 
-    // For now, redirect to Replit Auth. In a full implementation,
-    // you would store the additional data and complete setup after auth
-    window.location.href = "/api/login";
+    const [firstName, lastName] = signupData.fullName.split(' ', 2);
+    signupMutation.mutate({
+      whatsappNumber: signupData.whatsappNumber,
+      password: signupData.password,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      referralCode: signupData.referralCode || undefined,
+    });
   };
 
-  const resetForm = () => {
-    setFormData({
+  const resetForms = () => {
+    setLoginData({
+      whatsappNumber: "",
+      password: "",
+    });
+    setSignupData({
       fullName: "",
       whatsappNumber: "",
       password: "",
@@ -97,7 +146,7 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
   };
 
   const handleClose = () => {
-    resetForm();
+    resetForms();
     onClose();
   };
 
@@ -118,6 +167,8 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="login-whatsapp"
                 type="tel" 
                 placeholder="+1 234 567 8900"
+                value={loginData.whatsappNumber}
+                onChange={(e) => handleLoginChange("whatsappNumber", e.target.value)}
                 data-testid="input-login-whatsapp"
               />
             </div>
@@ -127,15 +178,18 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="login-password"
                 type="password" 
                 placeholder="Enter your password"
+                value={loginData.password}
+                onChange={(e) => handleLoginChange("password", e.target.value)}
                 data-testid="input-login-password"
               />
             </div>
             <Button 
               className="w-full" 
               onClick={handleLogin}
+              disabled={loginMutation.isPending}
               data-testid="button-login-submit"
             >
-              Login
+              {loginMutation.isPending ? "Logging in..." : "Login"}
             </Button>
           </div>
           
@@ -176,8 +230,8 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="signup-fullname"
                 type="text" 
                 placeholder="Enter your full name"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange("fullName", e.target.value)}
+                value={signupData.fullName}
+                onChange={(e) => handleSignupChange("fullName", e.target.value)}
                 data-testid="input-signup-fullname"
               />
             </div>
@@ -187,8 +241,8 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="signup-whatsapp"
                 type="tel" 
                 placeholder="+1 234 567 8900"
-                value={formData.whatsappNumber}
-                onChange={(e) => handleInputChange("whatsappNumber", e.target.value)}
+                value={signupData.whatsappNumber}
+                onChange={(e) => handleSignupChange("whatsappNumber", e.target.value)}
                 data-testid="input-signup-whatsapp"
               />
             </div>
@@ -198,8 +252,8 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="signup-password"
                 type="password" 
                 placeholder="Create a password"
-                value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
+                value={signupData.password}
+                onChange={(e) => handleSignupChange("password", e.target.value)}
                 data-testid="input-signup-password"
               />
             </div>
@@ -209,8 +263,8 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="signup-confirm"
                 type="password" 
                 placeholder="Repeat your password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                value={signupData.confirmPassword}
+                onChange={(e) => handleSignupChange("confirmPassword", e.target.value)}
                 data-testid="input-signup-confirm"
               />
             </div>
@@ -220,17 +274,18 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
                 id="signup-referral"
                 type="text" 
                 placeholder="Enter referral code"
-                value={formData.referralCode}
-                onChange={(e) => handleInputChange("referralCode", e.target.value)}
+                value={signupData.referralCode}
+                onChange={(e) => handleSignupChange("referralCode", e.target.value)}
                 data-testid="input-signup-referral"
               />
             </div>
             <Button 
               className="w-full" 
               onClick={handleSignup}
+              disabled={signupMutation.isPending}
               data-testid="button-signup-submit"
             >
-              Create Account
+              {signupMutation.isPending ? "Creating Account..." : "Create Account"}
             </Button>
           </div>
           

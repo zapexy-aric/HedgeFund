@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import {
   insertTransactionSchema,
   insertWithdrawalRequestSchema,
@@ -9,10 +9,6 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-const updateUserWhatsAppSchema = z.object({
-  whatsappNumber: z.string().min(1),
-  referralCode: z.string().optional(),
-});
 
 const purchasePlanSchema = z.object({
   planId: z.string(),
@@ -23,31 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  // Update user WhatsApp and referral code
-  app.post('/api/auth/update-whatsapp', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { whatsappNumber, referralCode } = updateUserWhatsAppSchema.parse(req.body);
-      
-      const user = await storage.updateUserWhatsApp(userId, whatsappNumber, referralCode);
-      res.json(user);
-    } catch (error) {
-      console.error("Error updating user WhatsApp:", error);
-      res.status(500).json({ message: "Failed to update user information" });
-    }
-  });
+  // Auth routes are now handled in auth.ts
 
   // Public routes
   app.get('/api/partners', async (req, res) => {
@@ -83,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Protected routes
   app.get('/api/user/investments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const investments = await storage.getUserInvestments(userId);
       res.json(investments);
     } catch (error) {
@@ -94,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/user/transactions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const transactions = await storage.getUserTransactions(userId);
       res.json(transactions);
     } catch (error) {
@@ -105,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/user/purchase-plan', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { planId, amount } = purchasePlanSchema.parse(req.body);
 
       // Get plan details
@@ -151,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/user/deposit', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { amount, utrNumber } = insertTransactionSchema
         .pick({ amount: true, utrNumber: true })
         .parse(req.body);
@@ -173,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/user/withdraw', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const withdrawalData = insertWithdrawalRequestSchema.parse(req.body);
 
       const request = await storage.createWithdrawalRequest({

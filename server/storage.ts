@@ -8,7 +8,7 @@ import {
   adminSettings,
   withdrawalRequests,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Partner,
   type Announcement,
   type InvestmentPlan,
@@ -27,10 +27,10 @@ import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  updateUserWhatsApp(userId: string, whatsappNumber: string, referralCode?: string): Promise<User>;
+  getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
 
   // Partners operations
@@ -71,34 +71,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+  async getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.whatsappNumber, whatsappNumber));
     return user;
   }
 
-  async updateUserWhatsApp(userId: string, whatsappNumber: string, referralCode?: string): Promise<User> {
-    const updateData: any = {
-      whatsappNumber,
-      updatedAt: new Date(),
-    };
-    if (referralCode) {
-      updateData.referralCode = referralCode;
-    }
-
+  async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId))
+      .insert(users)
+      .values(userData)
       .returning();
     return user;
   }
