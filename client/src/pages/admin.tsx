@@ -26,8 +26,7 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  Edit,
-  Trash2,
+  Menu,
   MessageSquare,
   Building
 } from "lucide-react";
@@ -80,6 +79,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [newPlan, setNewPlan] = useState({
     name: "",
     dailyPercentage: "",
@@ -276,6 +276,26 @@ export default function AdminDashboard() {
     { id: "partners", label: "Partners", icon: Building },
   ];
 
+  const renderSidebarContent = () => (
+    <div className="p-4 space-y-2">
+      {tabs.map((tab) => (
+        <Button
+          key={tab.id}
+          variant={activeTab === tab.id ? "default" : "ghost"}
+          className="w-full justify-start"
+          onClick={() => {
+            setActiveTab(tab.id);
+            setSidebarOpen(false);
+          }}
+          data-testid={`button-admin-tab-${tab.id}`}
+        >
+          <tab.icon className="h-4 w-4 mr-2" />
+          {tab.label}
+        </Button>
+      ))}
+    </div>
+  );
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -294,9 +314,17 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="bg-white shadow-sm px-6 py-4">
+      <header className="bg-white shadow-sm px-6 py-4 sticky top-0 z-30">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setSidebarOpen(!isSidebarOpen)}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
             <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
               H
             </div>
@@ -325,26 +353,19 @@ export default function AdminDashboard() {
       </header>
 
       <div className="flex">
-        {/* Admin Sidebar */}
-        <nav className="w-64 bg-white shadow-sm h-screen sticky top-0">
-          <div className="p-4 space-y-2">
-            {tabs.map((tab) => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setActiveTab(tab.id)}
-                data-testid={`button-admin-tab-${tab.id}`}
-              >
-                <tab.icon className="h-4 w-4 mr-2" />
-                {tab.label}
-              </Button>
-            ))}
-          </div>
+        {/* Mobile Sidebar */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <nav className={`fixed top-0 left-0 w-64 bg-white shadow-lg h-full z-30 transform transition-transform duration-300 ease-in-out lg:sticky lg:transform-none lg:top-[72px] lg:h-[calc(100vh-72px)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {renderSidebarContent()}
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 lg:ml-64">
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div data-testid="section-admin-overview">

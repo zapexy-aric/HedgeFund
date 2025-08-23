@@ -38,18 +38,26 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
   const loginMutation = useMutation({
     mutationFn: async (data: { whatsappNumber: string; password: string }) => {
       const response = await apiRequest("POST", "/api/login", data);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "An unknown error occurred" }));
+        throw new Error(errorData.message || "Login failed");
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
         description: "Logged in successfully!",
       });
       onClose();
-      window.location.reload();
+      if (data.user && data.user.isAdmin) {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/dashboard";
+      }
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Login Failed",
         description: error.message || "Invalid WhatsApp number or password",
@@ -61,6 +69,10 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
   const signupMutation = useMutation({
     mutationFn: async (data: { whatsappNumber: string; password: string; firstName?: string; lastName?: string; referralCode?: string }) => {
       const response = await apiRequest("POST", "/api/register", data);
+       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "An unknown error occurred" }));
+        throw new Error(errorData.message || "Registration failed");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -70,9 +82,9 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
         description: "Account created successfully!",
       });
       onClose();
-      window.location.reload();
+      window.location.href = "/dashboard";
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Registration Failed",
         description: error.message || "Failed to create account",
