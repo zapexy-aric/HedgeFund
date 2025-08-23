@@ -234,9 +234,9 @@ export default function AdminDashboard() {
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(parseFloat(amount));
   };
 
