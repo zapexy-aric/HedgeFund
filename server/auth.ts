@@ -34,8 +34,9 @@ export function setupAuth(app: Express) {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
+    createTableIfMissing: false, // Don't create table as it already exists
     ttl: sessionTtl,
+    tableName: "sessions", // Use existing sessions table
   });
 
   const sessionSettings: session.SessionOptions = {
@@ -108,7 +109,10 @@ export function setupAuth(app: Express) {
       });
 
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error("Login error after registration:", err);
+          return next(err);
+        }
         res.status(201).json({ 
           id: user.id, 
           whatsappNumber: user.whatsappNumber,
