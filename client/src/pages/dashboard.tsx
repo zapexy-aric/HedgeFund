@@ -187,12 +187,10 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Dashboard Header */}
-      <header className="bg-white shadow-sm px-6 py-4">
+      <header className="bg-white shadow-sm px-6 py-4 sticky top-0 z-20">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
-              H
-            </div>
+            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
           <div className="flex items-center space-x-4">

@@ -44,9 +44,7 @@ export default function Landing() {
       <header className={`bg-white shadow-lg fixed w-full top-0 z-50 transition-all duration-300 ${isHeaderSticky ? 'py-2' : 'py-4'}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
-              H
-            </div>
+            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
           <div className="hidden md:flex items-center space-x-4">
