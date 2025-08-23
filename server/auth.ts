@@ -113,14 +113,7 @@ export function setupAuth(app: Express) {
           console.error("Login error after registration:", err);
           return next(err);
         }
-        res.status(201).json({ 
-          id: user.id, 
-          whatsappNumber: user.whatsappNumber,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          depositBalance: user.depositBalance,
-          withdrawalBalance: user.withdrawalBalance 
-        });
+        res.status(201).json({ user });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -136,14 +129,7 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json({ 
-          id: user.id, 
-          whatsappNumber: user.whatsappNumber,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          depositBalance: user.depositBalance,
-          withdrawalBalance: user.withdrawalBalance 
-        });
+        res.status(200).json({ user });
       });
     })(req, res, next);
   });
@@ -160,14 +146,7 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const user = req.user as UserType;
-    res.json({ 
-      id: user.id, 
-      whatsappNumber: user.whatsappNumber,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      depositBalance: user.depositBalance,
-      withdrawalBalance: user.withdrawalBalance 
-    });
+    res.json(user);
   });
 }
 
