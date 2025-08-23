@@ -62,6 +62,16 @@ export interface IStorage {
   // Admin settings operations
   getAdminSetting(key: string): Promise<AdminSetting | undefined>;
   setAdminSetting(key: string, value: string): Promise<AdminSetting>;
+
+  // Admin operations
+  getAllTransactions(): Promise<Transaction[]>;
+  getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  approveWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
+  rejectWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
+  approveDeposit(transactionId: string, amount: string): Promise<Transaction>;
+  createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan>;
+  updateInvestmentPlan(id: string, plan: InsertInvestmentPlan): Promise<InvestmentPlan>;
+  deleteInvestmentPlan(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -233,6 +243,78 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return setting;
+  }
+
+  // Admin operations
+  async getAllTransactions(): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async getAllWithdrawalRequests(): Promise<WithdrawalRequest[]> {
+    return await db
+      .select()
+      .from(withdrawalRequests)
+      .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  async approveWithdrawalRequest(id: string): Promise<WithdrawalRequest> {
+    const [withdrawal] = await db
+      .update(withdrawalRequests)
+      .set({ status: "approved", processedAt: new Date() })
+      .where(eq(withdrawalRequests.id, id))
+      .returning();
+    return withdrawal;
+  }
+
+  async rejectWithdrawalRequest(id: string): Promise<WithdrawalRequest> {
+    const [withdrawal] = await db
+      .update(withdrawalRequests)
+      .set({ status: "rejected", processedAt: new Date() })
+      .where(eq(withdrawalRequests.id, id))
+      .returning();
+    return withdrawal;
+  }
+
+  async approveDeposit(transactionId: string, amount: string): Promise<Transaction> {
+    // Update transaction status
+    const [transaction] = await db
+      .update(transactions)
+      .set({ status: "completed" })
+      .where(eq(transactions.id, transactionId))
+      .returning();
+
+    if (transaction) {
+      // Update user's deposit balance
+      const user = await this.getUser(transaction.userId);
+      if (user) {
+        const currentBalance = parseFloat(user.depositBalance || "0");
+        const newBalance = (currentBalance + parseFloat(amount)).toFixed(2);
+        await this.updateUserBalances(transaction.userId, newBalance);
+      }
+    }
+
+    return transaction;
+  }
+
+  async createInvestmentPlan(plan: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const [newPlan] = await db.insert(investmentPlans).values(plan).returning();
+    return newPlan;
+  }
+
+  async updateInvestmentPlan(id: string, plan: InsertInvestmentPlan): Promise<InvestmentPlan> {
+    const [updatedPlan] = await db
+      .update(investmentPlans)
+      .set(plan)
+      .where(eq(investmentPlans.id, id))
+      .returning();
+    return updatedPlan;
+  }
+
+  async deleteInvestmentPlan(id: string): Promise<void> {
+    await db.delete(investmentPlans).where(eq(investmentPlans.id, id));
   }
 }
 

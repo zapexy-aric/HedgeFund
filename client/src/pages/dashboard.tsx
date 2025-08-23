@@ -32,6 +32,7 @@ interface User {
   lastName?: string;
   depositBalance: string;
   withdrawalBalance: string;
+  isAdmin?: boolean;
 }
 
 interface Announcement {
@@ -197,6 +198,16 @@ export default function Dashboard() {
             <span className="text-gray-600" data-testid="text-welcome">
               Welcome, <span className="font-semibold">{user?.firstName || user?.lastName || 'User'}</span>
             </span>
+            {user?.isAdmin && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/admin'}
+                data-testid="button-admin-panel"
+              >
+                Admin Panel
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="sm"

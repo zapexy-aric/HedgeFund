@@ -1,12 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth";
+import { setupAuth, isAuthenticated, isAdmin } from "./auth";
 import {
   insertTransactionSchema,
   insertWithdrawalRequestSchema,
   insertUserInvestmentSchema,
+  insertInvestmentPlanSchema,
+  insertAnnouncementSchema,
+  insertPartnerSchema,
+  users,
 } from "@shared/schema";
+import { db } from "./db";
+import { desc } from "drizzle-orm";
 import { z } from "zod";
 
 
@@ -178,6 +184,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching Telegram support:", error);
       res.status(500).json({ message: "Failed to fetch Telegram support" });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      const allUsers = await db.select({
+        id: users.id,
+        whatsappNumber: users.whatsappNumber,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        depositBalance: users.depositBalance,
+        withdrawalBalance: users.withdrawalBalance,
+        isAdmin: users.isAdmin,
+        createdAt: users.createdAt
+      }).from(users).orderBy(desc(users.createdAt));
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get('/api/admin/transactions', isAdmin, async (req, res) => {
+    try {
+      const allTransactions = await storage.getAllTransactions();
+      res.json(allTransactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  app.get('/api/admin/withdrawal-requests', isAdmin, async (req, res) => {
+    try {
+      const withdrawalRequests = await storage.getAllWithdrawalRequests();
+      res.json(withdrawalRequests);
+    } catch (error) {
+      console.error("Error fetching withdrawal requests:", error);
+      res.status(500).json({ message: "Failed to fetch withdrawal requests" });
+    }
+  });
+
+  app.post('/api/admin/approve-withdrawal/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const withdrawal = await storage.approveWithdrawalRequest(id);
+      res.json(withdrawal);
+    } catch (error) {
+      console.error("Error approving withdrawal:", error);
+      res.status(500).json({ message: "Failed to approve withdrawal" });
+    }
+  });
+
+  app.post('/api/admin/reject-withdrawal/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const withdrawal = await storage.rejectWithdrawalRequest(id);
+      res.json(withdrawal);
+    } catch (error) {
+      console.error("Error rejecting withdrawal:", error);
+      res.status(500).json({ message: "Failed to reject withdrawal" });
+    }
+  });
+
+  app.post('/api/admin/approve-deposit/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amount } = req.body;
+      const transaction = await storage.approveDeposit(id, amount);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error approving deposit:", error);
+      res.status(500).json({ message: "Failed to approve deposit" });
+    }
+  });
+
+  app.post('/api/admin/create-plan', isAdmin, async (req, res) => {
+    try {
+      const planData = insertInvestmentPlanSchema.parse(req.body);
+      const plan = await storage.createInvestmentPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error creating plan:", error);
+      res.status(500).json({ message: "Failed to create investment plan" });
+    }
+  });
+
+  app.put('/api/admin/update-plan/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const planData = insertInvestmentPlanSchema.parse(req.body);
+      const plan = await storage.updateInvestmentPlan(id, planData);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating plan:", error);
+      res.status(500).json({ message: "Failed to update investment plan" });
+    }
+  });
+
+  app.delete('/api/admin/delete-plan/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteInvestmentPlan(id);
+      res.json({ message: "Plan deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting plan:", error);
+      res.status(500).json({ message: "Failed to delete investment plan" });
+    }
+  });
+
+  app.post('/api/admin/create-announcement', isAdmin, async (req, res) => {
+    try {
+      const announcementData = insertAnnouncementSchema.parse(req.body);
+      const announcement = await storage.createAnnouncement(announcementData);
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.post('/api/admin/create-partner', isAdmin, async (req, res) => {
+    try {
+      const partnerData = insertPartnerSchema.parse(req.body);
+      const partner = await storage.createPartner(partnerData);
+      res.json(partner);
+    } catch (error) {
+      console.error("Error creating partner:", error);
+      res.status(500).json({ message: "Failed to create partner" });
+    }
+  });
+
+  app.put('/api/admin/settings/:key', isAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      const setting = await storage.setAdminSetting(key, value);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ message: "Failed to update setting" });
     }
   });
 
