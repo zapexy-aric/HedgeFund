@@ -117,8 +117,7 @@ export default function Landing() {
               </Button>
               <Button 
                 size="lg" 
-                variant="outline" 
-                className="bg-white text-primary hover:bg-gray-200 w-full md:w-auto"
+                className="bg-secondary hover:bg-green-700 text-white w-full md:w-auto"
                 data-testid="button-learn-more"
               >
                 Learn More
