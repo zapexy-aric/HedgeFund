@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { AuthModals } from "@/components/AuthModals";
+import { Menu, X } from "lucide-react";
 
 interface Partner {
   id: string;
@@ -12,6 +13,7 @@ interface Partner {
 export default function Landing() {
   const [showAuthModal, setShowAuthModal] = useState<"login" | "signup" | null>(null);
   const [isHeaderSticky, setIsHeaderSticky] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { data: partners = [] } = useQuery<Partner[]>({
     queryKey: ["/api/partners"],
@@ -26,6 +28,16 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleLoginClick = () => {
+    setIsMenuOpen(false);
+    setShowAuthModal("login");
+  };
+
+  const handleSignupClick = () => {
+    setIsMenuOpen(false);
+    setShowAuthModal("signup");
+  };
+
   return (
     <div className="min-h-screen">
       {/* Sticky Header */}
@@ -37,38 +49,67 @@ export default function Landing() {
             </div>
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
-          <div className="space-x-4">
+          <div className="hidden md:flex items-center space-x-4">
             <Button 
               variant="outline" 
-              onClick={() => setShowAuthModal("login")}
+              onClick={handleLoginClick}
               data-testid="button-login"
             >
               Login
             </Button>
             <Button 
-              onClick={() => setShowAuthModal("signup")}
+              onClick={handleSignupClick}
               data-testid="button-signup"
             >
               Sign Up
             </Button>
           </div>
+          <div className="md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(true)}>
+              <Menu className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
       </header>
 
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center md:hidden">
+          <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-white" onClick={() => setIsMenuOpen(false)}>
+            <X className="h-8 w-8" />
+          </Button>
+          <div className="flex flex-col space-y-6">
+            <Button
+              variant="outline"
+              className="text-lg py-6 px-12"
+              onClick={handleLoginClick}
+            >
+              Login
+            </Button>
+            <Button
+              className="text-lg py-6 px-12"
+              onClick={handleSignupClick}
+            >
+              Sign Up
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-br from-primary to-blue-700">
+      <section className="pt-32 pb-20 bg-gradient-to-br from-primary to-blue-700">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6" data-testid="text-hero-title">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6" data-testid="text-hero-title">
               Smart Investment Solutions
             </h1>
-            <p className="text-xl text-blue-100 mb-8 leading-relaxed" data-testid="text-hero-description">
+            <p className="text-lg md:text-xl text-blue-100 mb-8 leading-relaxed" data-testid="text-hero-description">
               Join thousands of investors earning consistent returns with our professionally managed hedge fund strategies.
             </p>
-            <div className="flex justify-center space-x-4">
+            <div className="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
               <Button 
                 size="lg" 
-                className="bg-secondary hover:bg-green-700"
+                className="bg-secondary hover:bg-green-700 w-full md:w-auto"
                 onClick={() => setShowAuthModal("signup")}
                 data-testid="button-start-investing"
               >
@@ -77,7 +118,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-primary"
+                className="bg-white text-primary hover:bg-gray-200 w-full md:w-auto"
                 data-testid="button-learn-more"
               >
                 Learn More
