@@ -28,7 +28,8 @@ import {
   XCircle,
   Menu,
   MessageSquare,
-  Building
+  Building,
+  Trash2
 } from "lucide-react";
 
 interface AdminUser {
@@ -213,6 +214,25 @@ export default function AdminDashboard() {
     },
   });
 
+  const deletePlanMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/delete-plan/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
+      toast({ title: "Success", description: "Investment plan deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete investment plan", variant: "destructive" });
+    },
+  });
+
+  const handleDeletePlan = (planId: string) => {
+    if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
+      deletePlanMutation.mutate(planId);
+    }
+  };
+
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -326,9 +346,7 @@ export default function AdminDashboard() {
             >
               <Menu className="h-6 w-6" />
             </Button>
-            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
-              H
-            </div>
+            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
             <div>
               <span className="text-2xl font-bold text-gray-800">HedgeFund Admin</span>
               <p className="text-sm text-gray-500">Administrative Dashboard</p>
@@ -664,28 +682,38 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {plans.map((plan) => (
-                        <div 
-                          key={plan.id} 
-                          className="p-3 border rounded-lg"
-                          data-testid={`card-admin-plan-${plan.id}`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-semibold">{plan.name}</h4>
-                              <p className="text-sm text-gray-500">{plan.dailyPercentage}% daily</p>
-                              <p className="text-xs text-gray-400">
-                                {formatCurrency(plan.minInvestment)} - {formatCurrency(plan.maxInvestment)}
-                              </p>
-                            </div>
-                            <div className="flex space-x-1">
-                              {plan.isPopular && <Badge variant="secondary">Popular</Badge>}
-                              <Badge variant={plan.isActive ? "default" : "outline"}>
-                                {plan.isActive ? "Active" : "Inactive"}
-                              </Badge>
+                        {plans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className="p-3 border rounded-lg"
+                            data-testid={`card-admin-plan-${plan.id}`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-semibold">{plan.name}</h4>
+                                <p className="text-sm text-gray-500">{plan.dailyPercentage}% daily</p>
+                                <p className="text-xs text-gray-400">
+                                  {formatCurrency(plan.minInvestment)} - {formatCurrency(plan.maxInvestment)}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {plan.isPopular && <Badge variant="secondary">Popular</Badge>}
+                                <Badge variant={plan.isActive ? "default" : "outline"}>
+                                  {plan.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => handleDeletePlan(plan.id)}
+                                  disabled={deletePlanMutation.isPending}
+                                  data-testid={`button-delete-plan-${plan.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </CardContent>
                 </Card>
