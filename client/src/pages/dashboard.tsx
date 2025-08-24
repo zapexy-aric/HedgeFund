@@ -58,6 +58,7 @@ interface InvestmentPlan {
   maxInvestment: string;
   durationDays: number;
   isPopular: boolean;
+  isActive: boolean;
 }
 
 interface UserInvestment {
@@ -115,7 +116,7 @@ export default function Dashboard() {
   });
 
   const { data: plans = [] } = useQuery<InvestmentPlan[]>({
-    queryKey: ["/api/plans"],
+    queryKey: ["/api/all-plans"],
     enabled: isAuthenticated,
   });
 
@@ -354,7 +355,7 @@ export default function Dashboard() {
               </div>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plans.map((plan) => (
+                {plans.filter(p => p.isActive).map((plan) => (
                   <Card key={plan.id} className="relative hover:shadow-md transition-shadow duration-200" data-testid={`card-plan-${plan.id}`}>
                     {plan.isPopular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">

@@ -58,6 +58,7 @@ export interface IStorage {
 
   // Investment plans operations
   getActivePlans(): Promise<InvestmentPlan[]>;
+  getAllPlans(): Promise<InvestmentPlan[]>;
   getPlanById(id: string): Promise<InvestmentPlan | undefined>;
 
   // User investments operations
@@ -212,6 +213,10 @@ export class DatabaseStorage implements IStorage {
       .from(investmentPlans)
       .where(eq(investmentPlans.isActive, true))
       .orderBy(desc(investmentPlans.isPopular));
+  }
+
+  async getAllPlans(): Promise<InvestmentPlan[]> {
+    return await db.select().from(investmentPlans).orderBy(desc(investmentPlans.createdAt));
   }
 
   async getPlanById(id: string): Promise<InvestmentPlan | undefined> {

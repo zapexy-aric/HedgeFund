@@ -58,6 +58,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/all-plans', async (req, res) => {
+    try {
+      const plans = await storage.getAllPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching all plans:", error);
+      res.status(500).json({ message: "Failed to fetch all investment plans" });
+    }
+  });
+
   app.get('/api/deposit-info', async (req, res) => {
     try {
       const qrCodeSetting = await storage.getAdminSetting("deposit_qr_code_url");
