@@ -104,22 +104,12 @@ export function setupAuth(app: Express) {
       // Generate a unique referral code
       const ownReferralCode = randomBytes(4).toString('hex').toUpperCase();
 
-      let referredById: string | undefined = undefined;
-      if (referralCode) {
-        // Find the user who owns the referral code
-        const referringUser = await storage.getUserByReferralCode(referralCode);
-        if (referringUser) {
-          referredById = referringUser.id;
-        }
-      }
-
       const user = await storage.createUser({
         whatsappNumber,
         password: hashedPassword,
         firstName,
         lastName,
         referralCode: ownReferralCode, // User's own code
-        referredBy: referredById,
       });
 
       req.login(user, (err) => {
@@ -159,14 +149,7 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    let user = req.user as UserType;
-
-    // Lazily generate a referral code if one doesn't exist
-    if (!user.referralCode) {
-      const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
-      // In a high-traffic system, we might want to check for collisions here
-      user = await storage.updateUserReferralCode(user.id, newReferralCode);
-    }
+    const user = req.user as UserType;
 
     res.json(user);
   });

@@ -128,25 +128,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentBalance = parseFloat(user.depositBalance || "0");
         const newBalance = (currentBalance - investmentAmount).toFixed(2);
         await storage.updateUserBalances(userId, newBalance);
-
-        // Handle referral bonus
-        if (user.referredBy) {
-          const referrer = await storage.getUser(user.referredBy);
-          if (referrer) {
-            const bonusAmount = dailyReturnAmount * 0.01;
-            const referrerBalance = parseFloat(referrer.withdrawalBalance || "0");
-            const newReferrerBalance = (referrerBalance + bonusAmount).toFixed(2);
-            await storage.updateUserBalances(referrer.id, undefined, newReferrerBalance);
-
-            // Create a transaction for the bonus
-            await storage.createTransaction({
-              userId: referrer.id,
-              type: "referral_bonus",
-              amount: bonusAmount.toFixed(2),
-              status: "completed",
-            });
-          }
-        }
       }
 
       res.json(investment);
@@ -209,17 +190,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating withdrawal request:", error);
       res.status(500).json({ message: "Failed to create withdrawal request" });
-    }
-  });
-
-  app.get('/api/user/referral-stats', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const count = await storage.getReferredUserCount(userId);
-      res.json({ totalReferred: count });
-    } catch (error) {
-      console.error("Error fetching referral stats:", error);
-      res.status(500).json({ message: "Failed to fetch referral stats" });
     }
   });
 
