@@ -119,7 +119,8 @@ export function setupAuth(app: Express) {
           firstName: user.firstName,
           lastName: user.lastName,
           depositBalance: user.depositBalance,
-          withdrawalBalance: user.withdrawalBalance
+          withdrawalBalance: user.withdrawalBalance,
+          referralCode: user.referralCode,
         });
       });
     } catch (error) {
@@ -142,7 +143,8 @@ export function setupAuth(app: Express) {
           firstName: user.firstName,
           lastName: user.lastName,
           depositBalance: user.depositBalance,
-          withdrawalBalance: user.withdrawalBalance
+          withdrawalBalance: user.withdrawalBalance,
+          referralCode: user.referralCode,
         });
       });
     })(req, res, next);
@@ -166,7 +168,8 @@ export function setupAuth(app: Express) {
       firstName: user.firstName,
       lastName: user.lastName,
       depositBalance: user.depositBalance,
-      withdrawalBalance: user.withdrawalBalance
+      withdrawalBalance: user.withdrawalBalance,
+      referralCode: user.referralCode,
     });
   });
 }

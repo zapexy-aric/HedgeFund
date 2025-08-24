@@ -27,7 +27,7 @@ import {
   referralEarnings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Helper function to generate a random referral code
@@ -73,6 +73,7 @@ export interface IStorage {
 
   // Transactions operations
   getUserTransactions(userId: string): Promise<Transaction[]>;
+  getTotalWithdrawn(userId: string): Promise<string>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: string, status: string): Promise<Transaction>;
 
@@ -317,6 +318,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactions.userId, userId))
       .orderBy(desc(transactions.createdAt))
       .limit(10);
+  }
+
+  async getTotalWithdrawn(userId: string): Promise<string> {
+    const result = await db
+      .select({
+        total: sql`sum(amount)`.mapWith(Number),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, "withdrawal"),
+          eq(transactions.status, "completed"),
+        ),
+      );
+
+    // The amount is stored as a negative value, so we need to make it positive
+    return Math.abs(result[0]?.total || 0).toFixed(2);
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {

@@ -213,6 +213,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  app.get(
+    "/api/user/total-withdrawn",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const totalWithdrawn = await storage.getTotalWithdrawn(userId);
+        res.json(totalWithdrawn);
+      } catch (error) {
+        console.error("Error fetching total withdrawn:", error);
+        res.status(500).json({ message: "Failed to fetch total withdrawn" });
+      }
+    },
+  );
+
   // Admin settings
   app.get('/api/admin/qr-code', async (req, res) => {
     try {

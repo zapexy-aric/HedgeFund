@@ -8,7 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users } from "lucide-react";
+import { Users, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReferredUser {
   firstName: string;
@@ -16,19 +18,60 @@ interface ReferredUser {
   whatsappNumber: string;
 }
 
-export default function ReferralsPage() {
+interface User {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  depositBalance: string;
+  withdrawalBalance: string;
+  isAdmin?: boolean;
+  referralCode?: string;
+}
+
+interface ReferralsPageProps {
+  user: User | undefined;
+}
+
+export default function ReferralsPage({ user }: ReferralsPageProps) {
+  const { toast } = useToast();
   const { data: referredUsers = [], isLoading } = useQuery<ReferredUser[]>({
     queryKey: ["/api/user/referrals"],
   });
+
+  const handleCopy = () => {
+    if (user?.referralCode) {
+      navigator.clipboard.writeText(user.referralCode);
+      toast({
+        title: "Copied!",
+        description: "Your referral code has been copied to the clipboard.",
+      });
+    }
+  };
 
   return (
     <div data-testid="section-referrals">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">My Referrals</h1>
         <p className="text-gray-600">
-          Here are the users you've successfully referred.
+          Share your referral code to earn rewards.
         </p>
       </div>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Your Referral Code</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-4">
+            <p className="text-2xl font-mono p-3 bg-secondary/10 rounded-lg">
+              {user?.referralCode || "..."}
+            </p>
+            <Button onClick={handleCopy} size="icon" variant="outline">
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
