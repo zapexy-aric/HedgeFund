@@ -163,18 +163,7 @@ export class DatabaseStorage implements IStorage {
   // Investment plans operations
   async getActivePlans(): Promise<InvestmentPlan[]> {
     return await db
-      .select({
-        id: investmentPlans.id,
-        name: investmentPlans.name,
-        dailyPercentage: investmentPlans.dailyPercentage,
-        minInvestment: investmentPlans.minInvestment,
-        maxInvestment: investmentPlans.maxInvestment,
-        durationDays: investmentPlans.durationDays,
-        imageUrl: investmentPlans.imageUrl,
-        isActive: investmentPlans.isActive,
-        isPopular: investmentPlans.isPopular,
-        createdAt: investmentPlans.createdAt,
-      })
+      .select()
       .from(investmentPlans)
       .where(eq(investmentPlans.isActive, true))
       .orderBy(desc(investmentPlans.isPopular));
