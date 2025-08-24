@@ -194,11 +194,11 @@ export default function Dashboard() {
             <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600" data-testid="text-welcome">
+          <div className="flex items-center space-x-2">
+            <span className="hidden sm:inline text-gray-600" data-testid="text-welcome">
               Welcome, <span className="font-semibold">{user?.firstName || user?.lastName || 'User'}</span>
             </span>
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               {user?.isAdmin && (
                 <Button
                   variant="outline"
@@ -209,26 +209,27 @@ export default function Dashboard() {
                   Admin Panel
                 </Button>
               )}
-              <Button 
+            </div>
+             <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
+                className="hidden md:inline-flex"
                 onClick={async () => {
                   await fetch('/api/logout', { method: 'POST' });
                   window.location.reload();
                 }}
                 data-testid="button-logout"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
               </Button>
-            </div>
           </div>
         </div>
       </header>
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[88px] flex flex-col">
-          <div className="p-4 space-y-4 flex-grow">
+        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[72px] flex flex-col items-center py-4">
+          <div className="space-y-4">
             {navItems.map((item) => (
               <Button
                 key={item.id}
@@ -241,20 +242,20 @@ export default function Dashboard() {
                 <item.icon className="h-5 w-5" />
               </Button>
             ))}
-          </div>
-          <div className="p-4 md:hidden">
-             <Button
-                variant="ghost"
-                size="icon"
-                className="w-12 h-12"
-                onClick={async () => {
-                  await fetch('/api/logout', { method: 'POST' });
-                  window.location.reload();
-                }}
-                data-testid="button-mobile-logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
+            <div className="md:hidden">
+               <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-12 h-12"
+                  onClick={async () => {
+                    await fetch('/api/logout', { method: 'POST' });
+                    window.location.reload();
+                  }}
+                  data-testid="button-mobile-logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+            </div>
           </div>
         </nav>
 
@@ -431,7 +432,7 @@ export default function Dashboard() {
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
                           <div className="p-3 bg-background rounded-lg">
                             <p className="text-gray-600">Daily Return</p>
                             <p className="font-bold text-secondary text-base">{formatCurrency(investment.dailyReturn)}</p>
