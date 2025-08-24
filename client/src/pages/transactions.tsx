@@ -24,6 +24,8 @@ export default function TransactionsPage() {
     queryKey: ["/api/user/all-transactions"],
   });
 
+  console.log("TransactionsPage rendered, isLoading:", isLoading, "transactions:", transactions);
+
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",

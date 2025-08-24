@@ -117,10 +117,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined> {
+    const normalizedNumber = `+${whatsappNumber.replace(/\D/g, '')}`;
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.whatsappNumber, whatsappNumber));
+      .where(eq(users.whatsappNumber, normalizedNumber));
     return user;
   }
 

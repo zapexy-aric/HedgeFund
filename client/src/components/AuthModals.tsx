@@ -35,6 +35,12 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
     referralCode: "",
   });
 
+  const handleWhatsappChange = (setter: Function, value: string) => {
+    if (value.length <= 10) {
+      setter((prev: any) => ({ ...prev, whatsappNumber: value.replace(/\D/g, '') }));
+    }
+  };
+
   const loginMutation = useMutation({
     mutationFn: async (data: { whatsappNumber: string; password: string }) => {
       const response = await apiRequest("POST", "/api/login", data);
@@ -111,7 +117,10 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
       return;
     }
 
-    loginMutation.mutate(loginData);
+    loginMutation.mutate({
+      ...loginData,
+      whatsappNumber: `+91${loginData.whatsappNumber}`,
+    });
   };
 
   const handleSignup = () => {
@@ -135,7 +144,7 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
 
     const [firstName, lastName] = signupData.fullName.split(' ', 2);
     signupMutation.mutate({
-      whatsappNumber: signupData.whatsappNumber,
+      whatsappNumber: `+91${signupData.whatsappNumber}`,
       password: signupData.password,
       firstName: firstName || '',
       lastName: lastName || '',
@@ -175,14 +184,19 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="login-whatsapp">WhatsApp Number</Label>
-              <Input 
-                id="login-whatsapp"
-                type="tel" 
-                placeholder="+1 234 567 8900"
-                value={loginData.whatsappNumber}
-                onChange={(e) => handleLoginChange("whatsappNumber", e.target.value)}
-                data-testid="input-login-whatsapp"
-              />
+              <div className="flex items-center">
+                <span className="p-2 border rounded-l-md bg-gray-100 text-gray-500">+91</span>
+                <Input
+                  id="login-whatsapp"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={loginData.whatsappNumber}
+                  onChange={(e) => handleWhatsappChange(setLoginData, e.target.value)}
+                  data-testid="input-login-whatsapp"
+                  className="rounded-l-none"
+                  maxLength={10}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="login-password">Password</Label>
@@ -249,14 +263,19 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-whatsapp">WhatsApp Number</Label>
-              <Input 
-                id="signup-whatsapp"
-                type="tel" 
-                placeholder="+1 234 567 8900"
-                value={signupData.whatsappNumber}
-                onChange={(e) => handleSignupChange("whatsappNumber", e.target.value)}
-                data-testid="input-signup-whatsapp"
-              />
+              <div className="flex items-center">
+                <span className="p-2 border rounded-l-md bg-gray-100 text-gray-500">+91</span>
+                <Input
+                  id="signup-whatsapp"
+                  type="tel"
+                  placeholder="9876543210"
+                  value={signupData.whatsappNumber}
+                  onChange={(e) => handleWhatsappChange(setSignupData, e.target.value)}
+                  data-testid="input-signup-whatsapp"
+                  className="rounded-l-none"
+                  maxLength={10}
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-password">Password</Label>
