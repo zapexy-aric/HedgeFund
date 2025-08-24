@@ -100,8 +100,6 @@ export function setupAuth(app: Express) {
       }
 
       const hashedPassword = await hashPassword(password);
-
-      // Generate a unique referral code
       const ownReferralCode = randomBytes(4).toString('hex').toUpperCase();
 
       const user = await storage.createUser({
@@ -109,7 +107,7 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
         firstName,
         lastName,
-        referralCode: ownReferralCode, // User's own code
+        referralCode: ownReferralCode,
       });
 
       req.login(user, (err) => {
@@ -133,7 +131,14 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(200).json({ user });
+        res.status(200).json({
+          id: user.id,
+          whatsappNumber: user.whatsappNumber,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          depositBalance: user.depositBalance,
+          withdrawalBalance: user.withdrawalBalance
+        });
       });
     })(req, res, next);
   });
@@ -149,9 +154,22 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = req.user as UserType;
+    let user = req.user as UserType;
 
-    res.json(user);
+    // Lazily generate a referral code if one doesn't exist
+    if (!user.referralCode) {
+      const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
+      storage.updateUserReferralCode(user.id, newReferralCode).then(updatedUser => {
+        // update the user object in the session for subsequent requests
+        req.login(updatedUser, () => {});
+        res.json(updatedUser);
+      }).catch(err => {
+        console.error("Error lazily generating referral code:", err);
+        res.json(user); // send original user object if update fails
+      });
+    } else {
+      res.json(user);
+    }
   });
 }
 

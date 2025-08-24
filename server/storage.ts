@@ -32,19 +32,15 @@ export interface IStorage {
   getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
+  updateUserReferralCode(userId: string, referralCode: string): Promise<User>;
 
   // Partners operations
   getActivePartners(): Promise<Partner[]>;
-  getAllPartners(): Promise<Partner[]>;
   createPartner(partner: InsertPartner): Promise<Partner>;
-  deletePartner(id: string): Promise<void>;
 
   // Announcements operations
   getActiveAnnouncements(): Promise<Announcement[]>;
-  getAllAnnouncements(): Promise<Announcement[]>;
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
-  updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement>;
-  deleteAnnouncement(id: string): Promise<void>;
 
   // Investment plans operations
   getActivePlans(): Promise<InvestmentPlan[]>;
@@ -91,6 +87,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUserReferralCode(userId: string, referralCode: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ referralCode })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -120,26 +125,12 @@ export class DatabaseStorage implements IStorage {
 
   // Partners operations
   async getActivePartners(): Promise<Partner[]> {
-    return await db.select({
-      id: partners.id,
-      name: partners.name,
-      logoUrl: partners.logoUrl,
-      isActive: partners.isActive,
-      createdAt: partners.createdAt,
-    }).from(partners).where(eq(partners.isActive, true));
+    return await db.select().from(partners).where(eq(partners.isActive, true));
   }
 
   async createPartner(partner: InsertPartner): Promise<Partner> {
     const [newPartner] = await db.insert(partners).values(partner).returning();
     return newPartner;
-  }
-
-  async getAllPartners(): Promise<Partner[]> {
-    return await db.select().from(partners).orderBy(desc(partners.createdAt));
-  }
-
-  async deletePartner(id: string): Promise<void> {
-    await db.delete(partners).where(eq(partners.id, id));
   }
 
   // Announcements operations
@@ -154,26 +145,6 @@ export class DatabaseStorage implements IStorage {
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
     const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
     return newAnnouncement;
-  }
-
-  async getAllAnnouncements(): Promise<Announcement[]> {
-    return await db
-      .select()
-      .from(announcements)
-      .orderBy(desc(announcements.createdAt));
-  }
-
-  async updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement> {
-    const [updatedAnnouncement] = await db
-      .update(announcements)
-      .set(announcement)
-      .where(eq(announcements.id, id))
-      .returning();
-    return updatedAnnouncement;
-  }
-
-  async deleteAnnouncement(id: string): Promise<void> {
-    await db.delete(announcements).where(eq(announcements.id, id));
   }
 
   // Investment plans operations
@@ -305,20 +276,6 @@ export class DatabaseStorage implements IStorage {
       .set({ status: "approved", processedAt: new Date() })
       .where(eq(withdrawalRequests.id, id))
       .returning();
-
-    if (withdrawal) {
-      // Balance is already deducted at time of request.
-      // Just create the transaction for history.
-      await this.createTransaction({
-        userId: withdrawal.userId,
-        type: "withdrawal",
-        amount: `-${withdrawal.amount}`,
-        status: "completed",
-        utrNumber: withdrawal.id, // Use withdrawal ID as a reference
-        upiId: withdrawal.upiId,
-        fullName: withdrawal.fullName,
-      });
-    }
     return withdrawal;
   }
 
@@ -328,17 +285,6 @@ export class DatabaseStorage implements IStorage {
       .set({ status: "rejected", processedAt: new Date() })
       .where(eq(withdrawalRequests.id, id))
       .returning();
-
-    if (withdrawal) {
-      // Refund the amount to the user's withdrawal balance
-      const user = await this.getUser(withdrawal.userId);
-      if (user) {
-        const currentBalance = parseFloat(user.withdrawalBalance || "0");
-        const withdrawalAmount = parseFloat(withdrawal.amount);
-        const newBalance = (currentBalance + withdrawalAmount).toFixed(2);
-        await this.updateUserBalances(withdrawal.userId, undefined, newBalance);
-      }
-    }
     return withdrawal;
   }
 

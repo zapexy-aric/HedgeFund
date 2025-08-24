@@ -25,6 +25,7 @@ import {
   ArrowDown,
   BarChart3,
   LogOut,
+  Share2,
   Copy
 } from "lucide-react";
 
@@ -35,6 +36,52 @@ import type {
   UserInvestment,
   Transaction
 } from "@shared/schema";
+
+interface User {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  depositBalance: string;
+  withdrawalBalance: string;
+  isAdmin?: boolean;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  createdAt: string;
+}
+
+interface InvestmentPlan {
+  id: string;
+  name: string;
+  dailyPercentage: string;
+  minInvestment: string;
+  maxInvestment: string;
+  durationDays: number;
+  isPopular: boolean;
+}
+
+interface UserInvestment {
+  id: string;
+  planId: string;
+  amount: string;
+  dailyReturn: string;
+  totalReturn: string;
+  daysCompleted: number;
+  status: string;
+  purchaseDate: string;
+}
+
+interface Transaction {
+  id: string;
+  type: string;
+  amount: string;
+  status: string;
+  createdAt: string;
+}
 
 export default function Dashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -86,11 +133,6 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const totalWithdrawn = transactions
-    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
-    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
-    .toString();
-
   const { data: telegramSupport } = useQuery<{ telegramUrl: string }>({
     queryKey: ["/api/admin/telegram-support"],
     enabled: isAuthenticated,
@@ -107,9 +149,9 @@ export default function Dashboard() {
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
     }).format(parseFloat(amount));
   };
 
@@ -130,11 +172,19 @@ export default function Dashboard() {
     return plans.find(p => p.id === planId);
   };
 
+  const handleCopyReferral = () => {
+    if (user?.referralCode) {
+      navigator.clipboard.writeText(user.referralCode);
+      toast({ title: "Copied!", description: "Referral code copied to clipboard." });
+    }
+  };
+
   const navItems = [
     { id: "home", icon: Home, label: "Home" },
     { id: "plans", icon: PieChart, label: "Plans" },
     { id: "purchased", icon: Briefcase, label: "Purchased Plans" },
     { id: "profile", icon: User, label: "Profile" },
+    { id: "referrals", icon: Share2, label: "Referrals" },
   ];
 
   if (authLoading) {
@@ -155,48 +205,47 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Dashboard Header */}
-      <header className="bg-white shadow-sm px-6 py-4 sticky top-0 z-20">
+      <header className="bg-white shadow-sm px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
+            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
+              H
+            </div>
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="hidden sm:inline text-gray-600" data-testid="text-welcome">
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-600" data-testid="text-welcome">
               Welcome, <span className="font-semibold">{user?.firstName || user?.lastName || 'User'}</span>
             </span>
-            <div className="hidden md:flex items-center space-x-2">
-              {user?.isAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = '/admin'}
-                  data-testid="button-admin-panel"
-                >
-                  Admin Panel
-                </Button>
-              )}
-            </div>
-             <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:inline-flex"
-                onClick={async () => {
-                  await fetch('/api/logout', { method: 'POST' });
-                  window.location.reload();
-                }}
-                data-testid="button-logout"
+            {user?.isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/admin'}
+                data-testid="button-admin-panel"
               >
-                <LogOut className="h-5 w-5" />
+                Admin Panel
               </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+              }}
+              data-testid="button-logout"
+            >
+              <ArrowUp className="h-4 w-4 rotate-45" />
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[72px] flex flex-col items-center py-4">
-          <div className="space-y-4">
+        <nav className="w-20 bg-white shadow-sm h-screen sticky top-0">
+          <div className="p-4 space-y-4">
             {navItems.map((item) => (
               <Button
                 key={item.id}
@@ -209,20 +258,6 @@ export default function Dashboard() {
                 <item.icon className="h-5 w-5" />
               </Button>
             ))}
-            <div className="md:hidden">
-               <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-12 h-12"
-                  onClick={async () => {
-                    await fetch('/api/logout', { method: 'POST' });
-                    window.location.reload();
-                  }}
-                  data-testid="button-mobile-logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-            </div>
           </div>
         </nav>
 
@@ -236,64 +271,8 @@ export default function Dashboard() {
                 <p className="text-gray-600">Stay updated with the latest announcements and opportunities</p>
               </div>
               
-              {/* Quick Stats */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <Card className="bg-gradient-to-r from-secondary to-green-600 text-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-green-100 text-sm">Total Invested</p>
-                        <p className="text-2xl font-bold" data-testid="text-total-invested">
-                          {formatCurrency(investments.reduce((sum, inv) => sum + parseFloat(inv.amount), 0).toString())}
-                        </p>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-green-100" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-r from-primary to-blue-600 text-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-blue-100 text-sm">Total Returns</p>
-                        <p className="text-2xl font-bold" data-testid="text-total-returns">
-                          {formatCurrency(investments.reduce((sum, inv) => sum + parseFloat(inv.totalReturn), 0).toString())}
-                        </p>
-                      </div>
-                      <BarChart3 className="h-8 w-8 text-blue-100" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-purple-100 text-sm">Active Plans</p>
-                        <p className="text-2xl font-bold" data-testid="text-active-plans">
-                          {investments.filter(inv => inv.status === 'active').length}
-                        </p>
-                      </div>
-                      <Briefcase className="h-8 w-8 text-purple-100" />
-                    </div>
-                  </CardContent>
-                </Card>
-                 <Card className="bg-gradient-to-r from-red-500 to-pink-500 text-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-pink-100 text-sm">Total Withdrawn</p>
-                        <p className="text-2xl font-bold" data-testid="text-total-withdrawn">
-                          {formatCurrency(totalWithdrawn)}
-                        </p>
-                      </div>
-                      <ArrowDown className="h-8 w-8 text-pink-100" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
               {/* Admin Announcements */}
-              <div className="grid lg:grid-cols-2 gap-6">
+              <div className="grid lg:grid-cols-2 gap-6 mb-8">
                 {announcements.map((announcement) => (
                   <Card key={announcement.id} data-testid={`card-announcement-${announcement.id}`}>
                     <CardContent className="p-6">
@@ -317,6 +296,36 @@ export default function Dashboard() {
                   </Card>
                 ))}
               </div>
+
+              {/* Quick Stats */}
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <Card className="bg-gradient-to-r from-secondary to-green-600 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-100 text-sm">Total Invested</p>
+                        <p className="text-2xl font-bold" data-testid="text-total-invested">
+                          {formatCurrency(investments.reduce((sum, inv) => sum + parseFloat(inv.amount), 0).toString())}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-green-100" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-purple-100 text-sm">Active Plans</p>
+                        <p className="text-2xl font-bold" data-testid="text-active-plans">
+                          {investments.filter(inv => inv.status === 'active').length}
+                        </p>
+                      </div>
+                      <Briefcase className="h-8 w-8 text-purple-100" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -328,49 +337,40 @@ export default function Dashboard() {
                 <p className="text-gray-600">Choose from our carefully curated investment opportunities</p>
               </div>
               
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan) => (
-                  <Card
-                    key={plan.id}
-                    className="hover:shadow-md transition-shadow duration-200 flex flex-col"
-                    data-testid={`card-plan-${plan.id}`}
-                  >
-                    <div className="p-4 flex flex-col flex-grow">
-                      <CardTitle className="text-lg font-bold mb-2">{plan.name}</CardTitle>
-                      <div className="text-2xl font-bold text-primary mb-4">
-                        {formatCurrency(((parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage)) / 100).toString())}
-                        <span className="text-sm text-gray-500 font-normal"> / day</span>
+                  <Card key={plan.id} className="relative hover:shadow-md transition-shadow duration-200" data-testid={`card-plan-${plan.id}`}>
+                    {plan.isPopular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-secondary text-white">Popular</Badge>
                       </div>
-
-                      <div className="space-y-2 text-sm text-gray-600 mb-4">
-                        <div className="flex justify-between">
-                          <span>Min Investment</span>
-                          <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Total Return</span>
-                          <span className="font-semibold">
-                            {formatCurrency(
-                              (
-                                (parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage) / 100) * plan.durationDays
-                              ).toString()
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Duration</span>
-                          <span className="font-semibold">{plan.durationDays} Days</span>
-                        </div>
+                    )}
+                    <CardHeader className="text-center">
+                      <CardTitle className="text-xl">{plan.name}</CardTitle>
+                      <div className="text-3xl font-bold text-primary">{plan.dailyPercentage}%</div>
+                      <p className="text-sm text-gray-500">Daily Returns</p>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Minimum Investment</span>
+                        <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
                       </div>
-
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Maximum Investment</span>
+                        <span className="font-semibold">{formatCurrency(plan.maxInvestment)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Duration</span>
+                        <span className="font-semibold">{plan.durationDays} Days</span>
+                      </div>
                       <Button
-                        className="w-full mt-auto"
+                        className="w-full"
                         onClick={() => handlePurchasePlan(plan)}
                         data-testid={`button-invest-${plan.id}`}
                       >
                         Invest Now
                       </Button>
-                    </div>
+                    </CardContent>
                   </Card>
                 ))}
               </div>
@@ -385,50 +385,53 @@ export default function Dashboard() {
                 <p className="text-gray-600">Track your active and completed investment plans</p>
               </div>
               
-              <div className="grid lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 {investments.map((investment) => {
                   const plan = getInvestmentPlan(investment.planId);
                   const progress = plan ? getInvestmentProgress(investment, plan) : 0;
                   const daysLeft = plan ? plan.durationDays - investment.daysCompleted : 0;
                   
                   return (
-                    <Card key={investment.id} className="overflow-hidden" data-testid={`card-investment-${investment.id}`}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-3">
+                    <Card key={investment.id} data-testid={`card-investment-${investment.id}`}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="text-xl font-bold text-gray-800">{plan?.name || 'Unknown Plan'}</h3>
-                            <p className="text-sm text-gray-500">Purchased: {formatDate(investment.purchaseDate)}</p>
+                            <h3 className="text-xl font-semibold text-gray-800">{plan?.name || 'Unknown Plan'}</h3>
+                            <p className="text-gray-500">Purchased on {formatDate(investment.purchaseDate)}</p>
                           </div>
                           <Badge variant={investment.status === 'active' ? 'default' : 'secondary'}>
                             {investment.status}
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-                          <div className="p-3 bg-background rounded-lg">
-                            <p className="text-gray-600">Daily Return</p>
-                            <p className="font-bold text-secondary text-base">{formatCurrency(investment.dailyReturn)}</p>
+                        <div className="grid md:grid-cols-5 gap-4 mb-4">
+                          <div className="text-center p-4 bg-background rounded-lg">
+                            <p className="text-gray-500 text-sm">Investment Amount</p>
+                            <p className="text-xl font-bold text-gray-800">{formatCurrency(investment.amount)}</p>
                           </div>
-                          <div className="p-3 bg-background rounded-lg">
-                            <p className="text-gray-600">Investment</p>
-                            <p className="font-bold text-gray-800 text-base">{formatCurrency(investment.amount)}</p>
+                          <div className="text-center p-4 bg-background rounded-lg">
+                            <p className="text-gray-500 text-sm">Daily Return</p>
+                            <p className="text-xl font-bold text-secondary">{formatCurrency(investment.dailyReturn)}</p>
                           </div>
-                          <div className="p-3 bg-background rounded-lg">
-                            <p className="text-gray-600">Total Return</p>
-                            <p className="font-bold text-gray-800 text-base">{formatCurrency(investment.totalReturn)}</p>
+                          <div className="text-center p-4 bg-background rounded-lg">
+                            <p className="text-gray-500 text-sm">Days Left</p>
+                            <p className="text-xl font-bold text-primary">{daysLeft}</p>
                           </div>
-                          <div className="p-3 bg-background rounded-lg">
-                            <p className="text-gray-600">Duration</p>
-                            <p className="font-bold text-gray-800 text-base">{plan?.durationDays} Days</p>
+                          <div className="text-center p-4 bg-background rounded-lg">
+                            <p className="text-gray-500 text-sm">Daily Profit %</p>
+                            <p className="text-xl font-bold text-purple-600">{plan?.dailyPercentage}%</p>
+                          </div>
+                          <div className="text-center p-4 bg-background rounded-lg">
+                            <p className="text-gray-500 text-sm">Net Profit</p>
+                            <p className="text-xl font-bold text-accent">{formatCurrency(investment.totalReturn)}</p>
                           </div>
                         </div>
                         
                         <div className="space-y-2">
-                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Progress</span>
-                            <span>{daysLeft} days left</span>
-                          </div>
                           <Progress value={progress} className="h-2" />
+                          <p className="text-sm text-gray-500">
+                            {investment.daysCompleted} of {plan?.durationDays || 0} days completed ({progress.toFixed(1)}%)
+                          </p>
                         </div>
                       </CardContent>
                     </Card>
@@ -458,20 +461,6 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Profile & Wallet</h1>
                 <p className="text-gray-600">Manage your account and financial transactions</p>
               </div>
-
-              <Card className="mb-8">
-                <CardHeader>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center">
-                       <User className="h-8 w-8" />
-                    </div>
-                    <div>
-                       <h2 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h2>
-                       <p className="text-gray-500">{user?.whatsappNumber}</p>
-                    </div>
-                  </div>
-                </CardHeader>
-              </Card>
               
               {/* Balance Cards */}
               <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -581,6 +570,37 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Referrals Section */}
+          {activeSection === "referrals" && (
+            <div data-testid="section-referrals">
+               <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Refer & Earn</h1>
+                <p className="text-gray-600">Share your referral code to earn rewards.</p>
+              </div>
+
+              <Card className="max-w-md mx-auto">
+                <CardHeader className="text-center">
+                  <CardTitle>Your Referral Code</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="p-4 border-2 border-dashed border-primary rounded-lg mb-4">
+                    <p className="text-3xl font-bold tracking-widest text-primary" data-testid="text-referral-code">
+                      {user?.referralCode || 'N/A'}
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={handleCopyReferral}
+                    disabled={!user?.referralCode}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Code
+                  </Button>
                 </CardContent>
               </Card>
             </div>

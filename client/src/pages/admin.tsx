@@ -17,6 +17,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -610,6 +616,7 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(deposit.amount)}</h3>
+                          <p className="text-sm text-gray-500">User: {users.find(u => u.id === deposit.userId)?.whatsappNumber || 'N/A'}</p>
                           <p className="text-sm text-gray-500">UTR: {deposit.utrNumber}</p>
                           <p className="text-xs text-gray-400">{formatDate(deposit.createdAt)}</p>
                         </div>
@@ -655,6 +662,7 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(withdrawal.amount)}</h3>
+                          <p className="text-sm text-gray-500">User: {users.find(u => u.id === withdrawal.userId)?.whatsappNumber || 'N/A'}</p>
                           <p className="text-sm text-gray-500">Name: {withdrawal.fullName}</p>
                           <p className="text-sm text-gray-500">UPI: {withdrawal.upiId}</p>
                           <p className="text-xs text-gray-400">{formatDate(withdrawal.createdAt)}</p>
