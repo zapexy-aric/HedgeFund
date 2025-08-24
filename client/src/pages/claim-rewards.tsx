@@ -72,21 +72,21 @@ export default function ClaimRewardsPage() {
 
   return (
     <div data-testid="section-claim-rewards">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-800 mb-1">
           Claim All Rewards
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-500 text-sm">
           Collect your referral earnings and daily plan returns.
         </p>
       </div>
 
-      <Card className="max-w-lg mx-auto">
-        <CardHeader className="text-center">
-          <Gift className="h-16 w-16 text-primary mx-auto mb-4" />
-          <CardTitle className="text-2xl">Your Unclaimed Rewards</CardTitle>
+      <Card className="max-w-md mx-auto">
+        <CardHeader className="text-center pb-2">
+          <Gift className="h-12 w-12 text-primary mx-auto mb-2" />
+          <CardTitle className="text-xl">Your Unclaimed Rewards</CardTitle>
         </CardHeader>
-        <CardContent className="text-center space-y-6">
+        <CardContent className="text-center space-y-4">
           {isLoading ? (
             <p>Loading...</p>
           ) : (

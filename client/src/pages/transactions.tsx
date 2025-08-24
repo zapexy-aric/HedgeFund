@@ -57,9 +57,9 @@ export default function TransactionsPage() {
 
   return (
     <div data-testid="section-transactions">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Transaction History</h1>
-        <p className="text-gray-600">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-800 mb-1">Transaction History</h1>
+        <p className="text-gray-500 text-sm">
           View all your past transactions.
         </p>
       </div>
