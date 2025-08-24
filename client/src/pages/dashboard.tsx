@@ -341,6 +341,7 @@ export default function Dashboard() {
                         className="w-full h-32 object-cover"
                       />
                     )}
+                    <pre className="text-xs bg-gray-100 p-2 text-black">{JSON.stringify(plan, null, 2)}</pre>
                     <div className="p-4 flex flex-col flex-grow">
                       <CardTitle className="text-lg font-bold mb-2">{plan.name}</CardTitle>
                       <div className="text-2xl font-bold text-primary mb-4">
