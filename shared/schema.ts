@@ -32,7 +32,6 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   referralCode: varchar("referral_code"),
-  referredBy: varchar("referred_by"),
   isAdmin: boolean("is_admin").default(false),
   depositBalance: decimal("deposit_balance", { precision: 10, scale: 2 }).default("0.00"),
   withdrawalBalance: decimal("withdrawal_balance", { precision: 10, scale: 2 }).default("0.00"),
