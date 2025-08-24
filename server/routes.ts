@@ -360,6 +360,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/partners', isAdmin, async (req, res) => {
+    try {
+      const allPartners = await storage.getAllPartners();
+      res.json(allPartners);
+    } catch (error) {
+      console.error("Error fetching partners:", error);
+      res.status(500).json({ message: "Failed to fetch partners" });
+    }
+  });
+
+  app.delete('/api/admin/partners/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePartner(id);
+      res.json({ message: "Partner deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting partner:", error);
+      res.status(500).json({ message: "Failed to delete partner" });
+    }
+  });
+
   app.put('/api/admin/settings/:key', isAdmin, async (req, res) => {
     try {
       const { key } = req.params;
