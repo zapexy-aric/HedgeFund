@@ -159,7 +159,15 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = req.user as UserType;
+    let user = req.user as UserType;
+
+    // Lazily generate a referral code if one doesn't exist
+    if (!user.referralCode) {
+      const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
+      // In a high-traffic system, we might want to check for collisions here
+      user = await storage.updateUserReferralCode(user.id, newReferralCode);
+    }
+
     res.json(user);
   });
 }

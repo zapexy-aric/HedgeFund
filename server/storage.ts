@@ -34,6 +34,7 @@ export interface IStorage {
   getReferredUserCount(userId: string): Promise<number>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
+  updateUserReferralCode(userId: string, referralCode: string): Promise<User>;
 
   // Partners operations
   getActivePartners(): Promise<Partner[]>;
@@ -104,6 +105,15 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.referredBy, userId));
     return result[0].count;
+  }
+
+  async updateUserReferralCode(userId: string, referralCode: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ referralCode })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 
   async createUser(userData: InsertUser): Promise<User> {
@@ -322,16 +332,8 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     if (withdrawal) {
-      // Deduct from user's withdrawal balance
-      const user = await this.getUser(withdrawal.userId);
-      if (user) {
-        const currentBalance = parseFloat(user.withdrawalBalance || "0");
-        const withdrawalAmount = parseFloat(withdrawal.amount);
-        const newBalance = (currentBalance - withdrawalAmount).toFixed(2);
-        await this.updateUserBalances(withdrawal.userId, undefined, newBalance);
-      }
-
-      // Create a completed withdrawal transaction
+      // Balance is already deducted at time of request.
+      // Just create the transaction for history.
       await this.createTransaction({
         userId: withdrawal.userId,
         type: "withdrawal",
@@ -351,6 +353,17 @@ export class DatabaseStorage implements IStorage {
       .set({ status: "rejected", processedAt: new Date() })
       .where(eq(withdrawalRequests.id, id))
       .returning();
+
+    if (withdrawal) {
+      // Refund the amount to the user's withdrawal balance
+      const user = await this.getUser(withdrawal.userId);
+      if (user) {
+        const currentBalance = parseFloat(user.withdrawalBalance || "0");
+        const withdrawalAmount = parseFloat(withdrawal.amount);
+        const newBalance = (currentBalance + withdrawalAmount).toFixed(2);
+        await this.updateUserBalances(withdrawal.userId, undefined, newBalance);
+      }
+    }
     return withdrawal;
   }
 
