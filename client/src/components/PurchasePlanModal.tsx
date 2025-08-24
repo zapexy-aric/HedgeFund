@@ -115,9 +115,9 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
     }).format(parseFloat(amount));
   };
 
@@ -183,7 +183,7 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="investment-amount">Investment Amount (USD)</Label>
+            <Label htmlFor="investment-amount">Investment Amount (INR)</Label>
             <Input 
               id="investment-amount"
               type="number" 

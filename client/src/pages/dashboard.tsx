@@ -26,6 +26,8 @@ import {
   BarChart3,
   Users,
   Gift,
+  LogOut,
+  CreditCard,
 } from "lucide-react";
 import ReferralsPage from "./referrals";
 import ClaimRewardsPage from "./claim-rewards";
@@ -37,6 +39,7 @@ interface User {
   depositBalance: string;
   withdrawalBalance: string;
   isAdmin?: boolean;
+  referralCode?: string;
 }
 
 interface Announcement {
@@ -131,6 +134,11 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
+  const { data: totalWithdrawn = "0" } = useQuery<string>({
+    queryKey: ["/api/user/total-withdrawn"],
+    enabled: isAuthenticated,
+  });
+
   const handlePurchasePlan = (plan: InvestmentPlan) => {
     setSelectedPlan(plan);
     setShowPurchasePlanModal(true);
@@ -142,9 +150,9 @@ export default function Dashboard() {
   };
 
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
     }).format(parseFloat(amount));
   };
 
@@ -200,8 +208,8 @@ export default function Dashboard() {
             </div>
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600" data-testid="text-welcome">
+          <div className="flex items-center space-x-4 ml-auto">
+            <span className="text-gray-600 text-right" data-testid="text-welcome">
               Welcome, <span className="font-semibold">{user?.firstName || user?.lastName || 'User'}</span>
             </span>
             {user?.isAdmin && (
@@ -214,24 +222,13 @@ export default function Dashboard() {
                 Admin Panel
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await fetch('/api/logout', { method: 'POST' });
-                window.location.reload();
-              }}
-              data-testid="button-logout"
-            >
-              <ArrowUp className="h-4 w-4 rotate-45" />
-            </Button>
           </div>
         </div>
       </header>
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-0">
+        <nav className="w-20 bg-white shadow-sm h-screen sticky top-0 flex flex-col justify-between">
           <div className="p-4 space-y-4">
             {navItems.map((item) => (
               <Button
@@ -246,6 +243,20 @@ export default function Dashboard() {
               </Button>
             ))}
           </div>
+          <div className="p-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-12 h-12"
+              onClick={async () => {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+              }}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </nav>
 
         {/* Main Content */}
@@ -258,34 +269,8 @@ export default function Dashboard() {
                 <p className="text-gray-600">Stay updated with the latest announcements and opportunities</p>
               </div>
               
-              {/* Admin Announcements */}
-              <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                {announcements.map((announcement) => (
-                  <Card key={announcement.id} data-testid={`card-announcement-${announcement.id}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        {announcement.imageUrl && (
-                          <img
-                            src={announcement.imageUrl}
-                            alt={announcement.title}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800 mb-2">{announcement.title}</h3>
-                          <p className="text-gray-600 text-sm">{announcement.content}</p>
-                          <span className="text-xs text-gray-500 mt-2 block">
-                            {formatDate(announcement.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
               {/* Quick Stats */}
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-4 gap-6 mb-8">
                 <Card className="bg-gradient-to-r from-secondary to-green-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -312,6 +297,19 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+                <Card className="bg-gradient-to-r from-accent to-red-600 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-red-100 text-sm">Total Withdrawn</p>
+                        <p className="text-2xl font-bold" data-testid="text-total-withdrawn">
+                          {formatCurrency(totalWithdrawn)}
+                        </p>
+                      </div>
+                      <ArrowDown className="h-8 w-8 text-red-100" />
+                    </div>
+                  </CardContent>
+                </Card>
                 <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -325,6 +323,32 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* Admin Announcements */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {announcements.map((announcement) => (
+                  <Card key={announcement.id} data-testid={`card-announcement-${announcement.id}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        {announcement.imageUrl && (
+                          <img
+                            src={announcement.imageUrl}
+                            alt={announcement.title}
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800 mb-2">{announcement.title}</h3>
+                          <p className="text-gray-600 text-sm">{announcement.content}</p>
+                          <span className="text-xs text-gray-500 mt-2 block">
+                            {formatDate(announcement.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
@@ -468,7 +492,7 @@ export default function Dashboard() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold">Deposit Balance</h3>
-                      <DollarSign className="h-8 w-8 text-blue-100" />
+                      <CreditCard className="h-8 w-8 text-blue-100" />
                     </div>
                     <p className="text-3xl font-bold" data-testid="text-deposit-balance">
                       {formatCurrency(user?.depositBalance || "0")}
@@ -576,7 +600,7 @@ export default function Dashboard() {
           )}
 
           {/* Referrals Section */}
-          {activeSection === "referrals" && <ReferralsPage />}
+          {activeSection === "referrals" && <ReferralsPage user={user} />}
 
           {/* Claim Rewards Section */}
           {activeSection === "claim" && <ClaimRewardsPage />}

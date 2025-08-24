@@ -24,8 +24,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [amount, setAmount] = useState("");
   const [utrNumber, setUtrNumber] = useState("");
 
-  const { data: upiData } = useQuery({
-    queryKey: ["/api/deposit-upi"],
+  const { data: qrCodeData } = useQuery<{ qrCodeUrl: string }>({
+    queryKey: ["/api/admin/qr-code"],
     enabled: isOpen,
   });
 
@@ -100,17 +100,13 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         <div className="space-y-4">
           <div className="p-4 bg-background rounded-lg">
             <Label className="text-sm font-medium text-gray-500">Step 1: Pay using UPI</Label>
-            <p className="text-gray-600">Transfer the desired amount to the UPI ID below.</p>
-            <div className="mt-2 flex items-center justify-between p-3 bg-white border rounded-md">
-              <span className="font-mono text-primary" data-testid="text-upi-id">{upiData?.upiId || 'loading...'}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCopy(upiData?.upiId || '')}
-                disabled={!upiData?.upiId}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
+            <p className="text-gray-600">Scan the QR code below with your UPI app.</p>
+            <div className="mt-2 flex items-center justify-center p-3 bg-white border rounded-md">
+              {qrCodeData?.qrCodeUrl ? (
+                <img src={qrCodeData.qrCodeUrl} alt="UPI QR Code" className="w-48 h-48" />
+              ) : (
+                <p>Loading QR Code...</p>
+              )}
             </div>
           </div>
 
