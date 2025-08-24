@@ -124,6 +124,11 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
+  const totalWithdrawn = transactions
+    .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+    .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0)
+    .toString();
+
   const { data: telegramSupport } = useQuery<{ telegramUrl: string }>({
     queryKey: ["/api/admin/telegram-support"],
     enabled: isAuthenticated,
@@ -270,7 +275,7 @@ export default function Dashboard() {
               </div>
               
               {/* Quick Stats */}
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <Card className="bg-gradient-to-r from-secondary to-green-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -307,6 +312,19 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <Briefcase className="h-8 w-8 text-purple-100" />
+                    </div>
+                  </CardContent>
+                </Card>
+                 <Card className="bg-gradient-to-r from-red-500 to-pink-500 text-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-pink-100 text-sm">Total Withdrawn</p>
+                        <p className="text-2xl font-bold" data-testid="text-total-withdrawn">
+                          {formatCurrency(totalWithdrawn)}
+                        </p>
+                      </div>
+                      <ArrowDown className="h-8 w-8 text-pink-100" />
                     </div>
                   </CardContent>
                 </Card>
@@ -486,6 +504,20 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Profile & Wallet</h1>
                 <p className="text-gray-600">Manage your account and financial transactions</p>
               </div>
+
+              <Card className="mb-8">
+                <CardHeader>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center">
+                       <User className="h-8 w-8" />
+                    </div>
+                    <div>
+                       <h2 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h2>
+                       <p className="text-gray-500">{user?.whatsappNumber}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
               
               {/* Balance Cards */}
               <div className="grid md:grid-cols-2 gap-6 mb-8">
