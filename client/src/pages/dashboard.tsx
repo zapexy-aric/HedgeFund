@@ -397,7 +397,6 @@ export default function Dashboard() {
                           <span className="font-semibold">
                             {formatCurrency(
                               (
-                                parseFloat(plan.minInvestment) +
                                 (parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage) / 100) * plan.durationDays
                               ).toString()
                             )}
