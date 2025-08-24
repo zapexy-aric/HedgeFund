@@ -43,7 +43,7 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/investments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
         description: "Investment plan purchased successfully! Your daily returns will start from tomorrow.",
@@ -138,7 +138,7 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg" data-testid="modal-purchase-plan">
+      <DialogContent className="sm:max-w-md" data-testid="modal-purchase-plan">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Purchase Investment Plan</DialogTitle>
           <p className="text-center text-gray-600">Invest in {plan.name}</p>
@@ -151,7 +151,7 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
             {plan.isPopular && <Badge className="bg-secondary">Popular</Badge>}
           </div>
           
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Daily Return Rate</p>
               <p className="font-semibold text-primary">{plan.dailyPercentage}%</p>
