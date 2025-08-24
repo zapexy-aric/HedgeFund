@@ -97,6 +97,11 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
+  const { data: referralStats } = useQuery<{ totalReferred: number }>({
+    queryKey: ["/api/user/referral-stats"],
+    enabled: isAuthenticated && activeSection === "referrals",
+  });
+
   const handlePurchasePlan = (plan: InvestmentPlan) => {
     setSelectedPlan(plan);
     setShowPurchasePlanModal(true);
@@ -603,26 +608,39 @@ export default function Dashboard() {
                 <p className="text-gray-600">Share your referral code to earn rewards.</p>
               </div>
 
-              <Card className="max-w-md mx-auto">
-                <CardHeader className="text-center">
-                  <CardTitle>Your Referral Code</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <div className="p-4 border-2 border-dashed border-primary rounded-lg mb-4">
-                    <p className="text-3xl font-bold tracking-widest text-primary" data-testid="text-referral-code">
-                      {user?.referralCode || 'N/A'}
+              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <Card>
+                   <CardHeader className="text-center">
+                    <CardTitle>Your Referral Code</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <div className="p-4 border-2 border-dashed border-primary rounded-lg mb-4">
+                      <p className="text-3xl font-bold tracking-widest text-primary" data-testid="text-referral-code">
+                        {user?.referralCode || 'N/A'}
+                      </p>
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={handleCopyReferral}
+                      disabled={!user?.referralCode}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Code
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card>
+                   <CardHeader className="text-center">
+                    <CardTitle>Referral Stats</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-gray-500">Total Users Referred</p>
+                    <p className="text-5xl font-bold text-secondary mt-2" data-testid="text-total-referred">
+                      {referralStats?.totalReferred ?? 0}
                     </p>
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={handleCopyReferral}
-                    disabled={!user?.referralCode}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Code
-                  </Button>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </main>
