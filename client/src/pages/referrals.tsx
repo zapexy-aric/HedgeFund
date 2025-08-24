@@ -81,24 +81,38 @@ export default function ReferralsPage({ user }: ReferralsPageProps) {
           {isLoading ? (
             <p>Loading...</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>First Name</TableHead>
-                  <TableHead>Last Name</TableHead>
-                  <TableHead>WhatsApp Number</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile View */}
+              <div className="md:hidden space-y-4">
                 {referredUsers.map((user, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{user.firstName}</TableCell>
-                    <TableCell>{user.lastName}</TableCell>
-                    <TableCell>{user.whatsappNumber}</TableCell>
-                  </TableRow>
+                  <div key={index} className="p-4 border rounded-lg">
+                    <p><strong>Name:</strong> {user.firstName} {user.lastName}</p>
+                    <p><strong>WhatsApp:</strong> {user.whatsappNumber}</p>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+              {/* Desktop View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>First Name</TableHead>
+                      <TableHead>Last Name</TableHead>
+                      <TableHead>WhatsApp Number</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {referredUsers.map((user, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{user.firstName}</TableCell>
+                        <TableCell>{user.lastName}</TableCell>
+                        <TableCell>{user.whatsappNumber}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           {referredUsers.length === 0 && !isLoading && (
             <div className="text-center py-8">

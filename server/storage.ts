@@ -27,7 +27,7 @@ import {
   referralEarnings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, inArray, sql } from "drizzle-orm";
+import { eq, desc, and, inArray, sql, gte, lt } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Helper function to generate a random referral code
@@ -71,7 +71,8 @@ export interface IStorage {
   ): Promise<ReferralEarning>;
   getReferredUsers(userId: string): Promise<User[]>;
   getUnclaimedReferralEarnings(userId: string): Promise<ReferralEarning[]>;
-  claimReferralEarnings(userId: string): Promise<{ totalClaimed: string }>;
+  getUnclaimedPlanReturns(userId: string): Promise<UserInvestment[]>;
+  claimAllRewards(userId: string): Promise<{ totalClaimed: string }>;
 
   // Transactions operations
   getUserTransactions(userId: string): Promise<Transaction[]>;
@@ -285,19 +286,41 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async claimReferralEarnings(
+  async getUnclaimedPlanReturns(userId: string): Promise<UserInvestment[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return await db
+      .select()
+      .from(userInvestments)
+      .where(
+        and(
+          eq(userInvestments.userId, userId),
+          eq(userInvestments.status, "active"),
+          lt(userInvestments.lastClaimedAt, today),
+        ),
+      );
+  }
+
+  async claimAllRewards(
     userId: string,
   ): Promise<{ totalClaimed: string }> {
-    const unclaimedEarnings = await this.getUnclaimedReferralEarnings(userId);
+    const unclaimedReferralEarnings = await this.getUnclaimedReferralEarnings(userId);
+    const unclaimedPlanReturns = await this.getUnclaimedPlanReturns(userId);
 
-    if (unclaimedEarnings.length === 0) {
+    if (unclaimedReferralEarnings.length === 0 && unclaimedPlanReturns.length === 0) {
       return { totalClaimed: "0.00" };
     }
 
-    const totalClaimed = unclaimedEarnings.reduce(
+    const totalReferralEarnings = unclaimedReferralEarnings.reduce(
       (sum, earning) => sum + parseFloat(earning.amount),
       0,
     );
+    const totalPlanReturns = unclaimedPlanReturns.reduce(
+      (sum, investment) => sum + parseFloat(investment.dailyReturn),
+      0,
+    );
+    const totalClaimed = totalReferralEarnings + totalPlanReturns;
 
     await db.transaction(async (tx) => {
       // Add to user's withdrawal balance
@@ -311,13 +334,22 @@ export class DatabaseStorage implements IStorage {
           .where(eq(users.id, userId));
       }
 
-      // Mark earnings as claimed
-      const earningIds = unclaimedEarnings.map((e) => e.id);
-      if (earningIds.length > 0) {
+      // Mark referral earnings as claimed
+      const referralEarningIds = unclaimedReferralEarnings.map((e) => e.id);
+      if (referralEarningIds.length > 0) {
         await tx
           .update(referralEarnings)
           .set({ status: "claimed" })
-          .where(inArray(referralEarnings.id, earningIds));
+          .where(inArray(referralEarnings.id, referralEarningIds));
+      }
+
+      // Update lastClaimedAt for plan returns
+      const investmentIds = unclaimedPlanReturns.map((i) => i.id);
+      if (investmentIds.length > 0) {
+        await tx
+          .update(userInvestments)
+          .set({ lastClaimedAt: new Date() })
+          .where(inArray(userInvestments.id, investmentIds));
       }
     });
 

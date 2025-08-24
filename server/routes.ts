@@ -212,17 +212,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  app.post(
-    "/api/user/claim-referral-earnings",
+  app.get(
+    "/api/user/unclaimed-plan-returns",
     isAuthenticated,
     async (req: any, res) => {
       try {
         const userId = req.user.id;
-        const result = await storage.claimReferralEarnings(userId);
+        const returns = await storage.getUnclaimedPlanReturns(userId);
+        res.json(returns);
+      } catch (error) {
+        console.error("Error fetching unclaimed plan returns:", error);
+        res.status(500).json({ message: "Failed to fetch unclaimed plan returns" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/user/claim-all-rewards",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const result = await storage.claimAllRewards(userId);
         res.json(result);
       } catch (error) {
-        console.error("Error claiming referral earnings:", error);
-        res.status(500).json({ message: "Failed to claim referral earnings" });
+        console.error("Error claiming rewards:", error);
+        res.status(500).json({ message: "Failed to claim rewards" });
       }
     },
   );
