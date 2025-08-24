@@ -100,14 +100,12 @@ export function setupAuth(app: Express) {
       }
 
       const hashedPassword = await hashPassword(password);
-      const ownReferralCode = randomBytes(4).toString('hex').toUpperCase();
-
       const user = await storage.createUser({
         whatsappNumber,
         password: hashedPassword,
         firstName,
         lastName,
-        referralCode: ownReferralCode,
+        referralCode,
       });
 
       req.login(user, (err) => {
@@ -115,7 +113,14 @@ export function setupAuth(app: Express) {
           console.error("Login error after registration:", err);
           return next(err);
         }
-        res.status(201).json({ user });
+        res.status(201).json({
+          id: user.id,
+          whatsappNumber: user.whatsappNumber,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          depositBalance: user.depositBalance,
+          withdrawalBalance: user.withdrawalBalance
+        });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -154,22 +159,15 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    let user = req.user as UserType;
-
-    // Lazily generate a referral code if one doesn't exist
-    if (!user.referralCode) {
-      const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
-      storage.updateUserReferralCode(user.id, newReferralCode).then(updatedUser => {
-        // update the user object in the session for subsequent requests
-        req.login(updatedUser, () => {});
-        res.json(updatedUser);
-      }).catch(err => {
-        console.error("Error lazily generating referral code:", err);
-        res.json(user); // send original user object if update fails
-      });
-    } else {
-      res.json(user);
-    }
+    const user = req.user as UserType;
+    res.json({
+      id: user.id,
+      whatsappNumber: user.whatsappNumber,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      depositBalance: user.depositBalance,
+      withdrawalBalance: user.withdrawalBalance
+    });
   });
 }
 
