@@ -32,7 +32,7 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
         description: "Withdrawal request submitted successfully! It will be processed within 24-48 hours after admin verification.",

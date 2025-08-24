@@ -35,7 +35,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
         description: "Deposit request submitted successfully! It will be reflected in your balance after admin verification.",
@@ -91,7 +91,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-11/12 sm:max-w-md" data-testid="modal-deposit">
+      <DialogContent className="w-11/12 sm:max-w-xs" data-testid="modal-deposit">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Deposit Funds</DialogTitle>
           <p className="text-center text-gray-600">Follow the steps below to add funds</p>
@@ -100,13 +100,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         <div className="space-y-4">
           <div className="p-4 bg-background rounded-lg">
             <Label className="text-sm font-medium text-gray-500">Step 1: Pay using UPI</Label>
-            <p className="text-gray-600">Scan the QR code or use the UPI ID below.</p>
+            <p className="text-gray-600">Transfer the desired amount to the UPI ID below.</p>
             <div className="mt-2 flex flex-col items-center justify-center p-3 bg-white border rounded-md">
-              {depositInfo?.qrCodeUrl ? (
-                <img src={depositInfo.qrCodeUrl} alt="UPI QR Code" className="w-48 h-48" />
-              ) : (
-                <p>Loading QR Code...</p>
-              )}
               {depositInfo?.upiId && (
                 <div className="mt-4 w-full flex items-center justify-between p-2 bg-gray-100 rounded-md">
                   <span className="font-mono text-sm text-primary">{depositInfo.upiId}</span>
