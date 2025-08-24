@@ -51,10 +51,10 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
         description: "Logged in successfully!",
       });
       onClose();
-      if (data.user && data.user.isAdmin) {
+      if (data.isAdmin) {
         window.location.href = "/admin";
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }
     },
     onError: (error: Error) => {
@@ -82,7 +82,7 @@ export function AuthModals({ showModal, onClose, onSwitchModal }: AuthModalsProp
         description: "Account created successfully!",
       });
       onClose();
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({

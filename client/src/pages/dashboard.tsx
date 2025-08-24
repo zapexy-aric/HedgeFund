@@ -211,9 +211,7 @@ export default function Dashboard() {
       <header className="bg-white shadow-sm px-6 py-4 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
-              H
-            </div>
+            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
             <span className="text-2xl font-bold text-gray-800">HedgeFund</span>
           </div>
           <div className="flex items-center space-x-4 ml-auto">
@@ -462,7 +460,7 @@ export default function Dashboard() {
                       <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-600 mb-2">No Investments Yet</h3>
                       <p className="text-gray-500 mb-4">Start your investment journey by choosing a plan</p>
-                      <Button onClick={() => setActiveSection("plans")}>
+                      <Button variant="default" onClick={() => setActiveSection("plans")}>
                         View Investment Plans
                       </Button>
                     </CardContent>
