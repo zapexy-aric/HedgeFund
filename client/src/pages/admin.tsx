@@ -600,7 +600,7 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="plan-percentage">Daily Percentage (%)</Label>
+                      <Label htmlFor="plan-percentage">Daily Profit (%)</Label>
                       <Input
                         id="plan-percentage"
                         type="number"

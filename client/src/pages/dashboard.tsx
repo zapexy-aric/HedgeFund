@@ -393,8 +393,14 @@ export default function Dashboard() {
                           <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Max Investment</span>
-                          <span className="font-semibold">{formatCurrency(plan.maxInvestment)}</span>
+                          <span>Total Return</span>
+                          <span className="font-semibold">
+                            {formatCurrency(
+                              (
+                                (parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage) / 100) * plan.durationDays
+                              ).toString()
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Duration</span>
