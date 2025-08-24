@@ -38,6 +38,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/deposit-upi', async (req, res) => {
+    try {
+      const upiIdSetting = await storage.getAdminSetting("deposit_upi_id");
+      res.json({ upiId: upiIdSetting?.value || "" });
+    } catch (error) {
+      console.error("Error fetching UPI ID:", error);
+      res.status(500).json({ message: "Failed to fetch UPI ID" });
+    }
+  });
+
   app.get('/api/announcements', async (req, res) => {
     try {
       const announcements = await storage.getActiveAnnouncements();

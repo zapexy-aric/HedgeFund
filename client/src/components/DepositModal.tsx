@@ -11,7 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { X } from "lucide-react";
+import { X, Copy } from "lucide-react";
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -24,8 +24,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [amount, setAmount] = useState("");
   const [utrNumber, setUtrNumber] = useState("");
 
-  const { data: qrCodeData } = useQuery<{ qrCodeUrl: string }>({
-    queryKey: ["/api/admin/qr-code"],
+  const { data: upiData } = useQuery({
+    queryKey: ["/api/deposit-upi"],
     enabled: isOpen,
   });
 
@@ -38,7 +38,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Success",
-        description: "Deposit request submitted successfully! It will be processed within 24 hours.",
+        description: "Deposit request submitted successfully! It will be reflected in your balance after admin verification.",
       });
       setAmount("");
       setUtrNumber("");
@@ -52,6 +52,12 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
       });
     },
   });
+
+  const handleCopy = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied!", description: "UPI ID copied to clipboard." });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +74,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
     if (!utrNumber) {
       toast({
         title: "Error",
-        description: "Please enter the UTR number",
+        description: "Please enter the UTR/Transaction ID",
         variant: "destructive",
       });
       return;
@@ -88,62 +94,64 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
       <DialogContent className="sm:max-w-md" data-testid="modal-deposit">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Deposit Funds</DialogTitle>
-          <p className="text-center text-gray-600">Add money to your investment account</p>
+          <p className="text-center text-gray-600">Follow the steps below to add funds</p>
         </DialogHeader>
-        
-        {/* QR Code */}
-        <div className="text-center mb-6">
-          <div className="bg-gray-100 p-4 rounded-lg inline-block">
-            {qrCodeData?.qrCodeUrl ? (
-              <img 
-                src={qrCodeData.qrCodeUrl} 
-                alt="Payment QR Code" 
-                className="w-48 h-48 mx-auto"
-                data-testid="img-qr-code"
-              />
-            ) : (
-              <div className="w-48 h-48 bg-gray-200 flex items-center justify-center rounded-lg">
-                <p className="text-gray-500">QR Code Loading...</p>
-              </div>
-            )}
+
+        <div className="space-y-4">
+          <div className="p-4 bg-background rounded-lg">
+            <Label className="text-sm font-medium text-gray-500">Step 1: Pay using UPI</Label>
+            <p className="text-gray-600">Transfer the desired amount to the UPI ID below.</p>
+            <div className="mt-2 flex items-center justify-between p-3 bg-white border rounded-md">
+              <span className="font-mono text-primary" data-testid="text-upi-id">{upiData?.upiId || 'loading...'}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCopy(upiData?.upiId || '')}
+                disabled={!upiData?.upiId}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">Scan the QR code with your payment app</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+             <div className="p-4 bg-background rounded-lg space-y-2">
+               <Label className="text-sm font-medium text-gray-500">Step 2: Confirm Deposit</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-amount">Amount Deposited (INR)</Label>
+                  <Input
+                    id="deposit-amount"
+                    type="number"
+                    placeholder="Enter exact amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    min="1"
+                    step="0.01"
+                    data-testid="input-deposit-amount"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-utr">UTR / Transaction ID</Label>
+                  <Input
+                    id="deposit-utr"
+                    type="text"
+                    placeholder="Enter the 12-digit UTR"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    data-testid="input-deposit-utr"
+                  />
+                </div>
+             </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={depositMutation.isPending}
+              data-testid="button-deposit-submit"
+            >
+              {depositMutation.isPending ? "Submitting..." : "Submit Deposit Request"}
+            </Button>
+          </form>
         </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="deposit-amount">Amount (USD)</Label>
-            <Input 
-              id="deposit-amount"
-              type="number" 
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min="1"
-              step="0.01"
-              data-testid="input-deposit-amount"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="deposit-utr">UTR Number</Label>
-            <Input 
-              id="deposit-utr"
-              type="text" 
-              placeholder="Enter UTR number"
-              value={utrNumber}
-              onChange={(e) => setUtrNumber(e.target.value)}
-              data-testid="input-deposit-utr"
-            />
-          </div>
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={depositMutation.isPending}
-            data-testid="button-deposit-submit"
-          >
-            {depositMutation.isPending ? "Submitting..." : "Submit Deposit"}
-          </Button>
-        </form>
         
         <Button 
           variant="ghost" 
