@@ -35,7 +35,9 @@ export interface IStorage {
 
   // Partners operations
   getActivePartners(): Promise<Partner[]>;
+  getAllPartners(): Promise<Partner[]>;
   createPartner(partner: InsertPartner): Promise<Partner>;
+  deletePartner(id: string): Promise<void>;
 
   // Announcements operations
   getActiveAnnouncements(): Promise<Announcement[]>;
@@ -130,6 +132,14 @@ export class DatabaseStorage implements IStorage {
   async createPartner(partner: InsertPartner): Promise<Partner> {
     const [newPartner] = await db.insert(partners).values(partner).returning();
     return newPartner;
+  }
+
+  async getAllPartners(): Promise<Partner[]> {
+    return await db.select().from(partners).orderBy(desc(partners.createdAt));
+  }
+
+  async deletePartner(id: string): Promise<void> {
+    await db.delete(partners).where(eq(partners.id, id));
   }
 
   // Announcements operations

@@ -64,7 +64,7 @@ interface WithdrawalRequest {
   createdAt: string;
 }
 
-import type { InvestmentPlan, Announcement } from "@shared/schema";
+import type { InvestmentPlan, Announcement, Partner } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -139,6 +139,11 @@ export default function AdminDashboard() {
   const { data: allAnnouncements = [] } = useQuery<Announcement[]>({
     queryKey: ["/api/admin/announcements"],
     enabled: isAuthenticated && user?.isAdmin && activeTab === "announcements",
+  });
+
+  const { data: allPartners = [] } = useQuery<Partner[]>({
+    queryKey: ["/api/admin/partners"],
+    enabled: isAuthenticated && user?.isAdmin && activeTab === "partners",
   });
 
   const approveWithdrawalMutation = useMutation({
@@ -290,6 +295,19 @@ export default function AdminDashboard() {
     },
   });
 
+  const deletePartnerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/partners/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/partners"] });
+      toast({ title: "Success", description: "Partner deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete partner", variant: "destructive" });
+    },
+  });
+
   const handleDeletePlan = (planId: string) => {
     if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
       deletePlanMutation.mutate(planId);
@@ -299,6 +317,12 @@ export default function AdminDashboard() {
   const handleDeleteAnnouncement = (announcementId: string) => {
     if (window.confirm("Are you sure you want to delete this announcement?")) {
       deleteAnnouncementMutation.mutate(announcementId);
+    }
+  };
+
+  const handleDeletePartner = (partnerId: string) => {
+    if (window.confirm("Are you sure you want to delete this partner?")) {
+      deletePartnerMutation.mutate(partnerId);
     }
   };
 
@@ -1011,42 +1035,63 @@ export default function AdminDashboard() {
           {activeTab === "partners" && (
             <div data-testid="section-admin-partners">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Partners</h1>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add New Partner</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="partner-name">Partner Name</Label>
-                    <Input
-                      id="partner-name"
-                      value={newPartner.name}
-                      onChange={(e) => setNewPartner(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter partner name"
-                      data-testid="input-partner-name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="partner-logo">Logo URL</Label>
-                    <Input
-                      id="partner-logo"
-                      value={newPartner.logoUrl}
-                      onChange={(e) => setNewPartner(prev => ({ ...prev, logoUrl: e.target.value }))}
-                      placeholder="https://example.com/logo.png"
-                      data-testid="input-partner-logo"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleCreatePartner}
-                    disabled={createPartnerMutation.isPending}
-                    className="w-full"
-                    data-testid="button-create-partner"
-                  >
-                    {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Add New Partner</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="partner-name">Partner Name</Label>
+                      <Input
+                        id="partner-name"
+                        value={newPartner.name}
+                        onChange={(e) => setNewPartner(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Enter partner name"
+                        data-testid="input-partner-name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="partner-logo">Logo URL</Label>
+                      <Input
+                        id="partner-logo"
+                        value={newPartner.logoUrl}
+                        onChange={(e) => setNewPartner(prev => ({ ...prev, logoUrl: e.target.value }))}
+                        placeholder="https://example.com/logo.png"
+                        data-testid="input-partner-logo"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCreatePartner}
+                      disabled={createPartnerMutation.isPending}
+                      className="w-full"
+                      data-testid="button-create-partner"
+                    >
+                      {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
+                    </Button>
+                  </CardContent>
+                </Card>
+                 <Card>
+                  <CardHeader>
+                    <CardTitle>Existing Partners</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {allPartners.map((partner) => (
+                      <div key={partner.id} className="p-3 border rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center space-x-3">
+                            <img src={partner.logoUrl} alt={partner.name} className="h-10 w-20 object-contain"/>
+                            <h4 className="font-semibold">{partner.name}</h4>
+                          </div>
+                          <Button variant="destructive" size="icon" onClick={() => handleDeletePartner(partner.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
