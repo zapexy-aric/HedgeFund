@@ -431,7 +431,7 @@ export default function Dashboard() {
                 <p className="text-gray-600">Track your active and completed investment plans</p>
               </div>
               
-              <div className="space-y-6">
+              <div className="grid lg:grid-cols-2 gap-6">
                 {investments.map((investment) => {
                   const plan = getInvestmentPlan(investment.planId);
                   const progress = plan ? getInvestmentProgress(investment, plan) : 0;

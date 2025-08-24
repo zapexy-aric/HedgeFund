@@ -29,7 +29,8 @@ import {
   Menu,
   MessageSquare,
   Building,
-  Trash2
+  Trash2,
+  Edit
 } from "lucide-react";
 
 interface AdminUser {
@@ -74,6 +75,14 @@ interface InvestmentPlan {
   isPopular: boolean;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  isActive: boolean;
+}
+
 export default function AdminDashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
   const user = authUser as AuthUser | null;
@@ -81,6 +90,8 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [newPlan, setNewPlan] = useState({
     name: "",
     dailyPercentage: "",
@@ -130,6 +141,11 @@ export default function AdminDashboard() {
   const { data: plans = [] } = useQuery<InvestmentPlan[]>({
     queryKey: ["/api/plans"],
     enabled: isAuthenticated && user?.isAdmin,
+  });
+
+  const { data: allAnnouncements = [] } = useQuery<Announcement[]>({
+    queryKey: ["/api/admin/announcements"],
+    enabled: isAuthenticated && user?.isAdmin && activeTab === "announcements",
   });
 
   const approveWithdrawalMutation = useMutation({
@@ -227,9 +243,56 @@ export default function AdminDashboard() {
     },
   });
 
+  const updatePlanMutation = useMutation({
+    mutationFn: async (plan: InvestmentPlan) => {
+      await apiRequest("PUT", `/api/admin/update-plan/${plan.id}`, plan);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
+      toast({ title: "Success", description: "Investment plan updated successfully" });
+      setEditingPlan(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update investment plan", variant: "destructive" });
+    },
+  });
+
+  const updateAnnouncementMutation = useMutation({
+    mutationFn: async (announcement: Announcement) => {
+      await apiRequest("PUT", `/api/admin/announcements/${announcement.id}`, announcement);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      toast({ title: "Success", description: "Announcement updated successfully" });
+      setEditingAnnouncement(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update announcement", variant: "destructive" });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/announcements/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      toast({ title: "Success", description: "Announcement deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete announcement", variant: "destructive" });
+    },
+  });
+
   const handleDeletePlan = (planId: string) => {
     if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
       deletePlanMutation.mutate(planId);
+    }
+  };
+
+  const handleDeleteAnnouncement = (announcementId: string) => {
+    if (window.confirm("Are you sure you want to delete this announcement?")) {
+      deleteAnnouncementMutation.mutate(announcementId);
     }
   };
 
@@ -701,6 +764,14 @@ export default function AdminDashboard() {
                                   {plan.isActive ? "Active" : "Inactive"}
                                 </Badge>
                                 <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => setEditingPlan(plan)}
+                                  data-testid={`button-edit-plan-${plan.id}`}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
                                   variant="destructive"
                                   size="icon"
                                   onClick={() => handleDeletePlan(plan.id)}
@@ -720,58 +791,205 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* Edit Plan Modal */}
+          {editingPlan && (
+            <Dialog open={!!editingPlan} onOpenChange={() => setEditingPlan(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Investment Plan</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                   <div>
+                      <Label htmlFor="edit-plan-name">Plan Name</Label>
+                      <Input
+                        id="edit-plan-name"
+                        value={editingPlan.name}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, name: e.target.value } : null)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-plan-percentage">Daily Profit (%)</Label>
+                      <Input
+                        id="edit-plan-percentage"
+                        type="number"
+                        step="0.01"
+                        value={editingPlan.dailyPercentage}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, dailyPercentage: e.target.value } : null)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-plan-min">Min Investment</Label>
+                      <Input
+                        id="edit-plan-min"
+                        type="number"
+                        value={editingPlan.minInvestment}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, minInvestment: e.target.value } : null)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-plan-max">Max Investment</Label>
+                      <Input
+                        id="edit-plan-max"
+                        type="number"
+                        value={editingPlan.maxInvestment}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, maxInvestment: e.target.value } : null)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-plan-duration">Duration (Days)</Label>
+                      <Input
+                        id="edit-plan-duration"
+                        type="number"
+                        value={editingPlan.durationDays}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, durationDays: parseInt(e.target.value) } : null)}
+                      />
+                    </div>
+                </div>
+                <Button
+                  onClick={() => updatePlanMutation.mutate(editingPlan)}
+                  disabled={updatePlanMutation.isPending}
+                  className="w-full"
+                >
+                  {updatePlanMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogContent>
+            </Dialog>
+          )}
+
           {/* Announcements Tab */}
           {activeTab === "announcements" && (
             <div data-testid="section-admin-announcements">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Announcements</h1>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Announcement</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="announcement-title">Title</Label>
-                    <Input
-                      id="announcement-title"
-                      value={newAnnouncement.title}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Enter announcement title"
-                      data-testid="input-announcement-title"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="announcement-content">Content</Label>
-                    <Textarea
-                      id="announcement-content"
-                      value={newAnnouncement.content}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
-                      placeholder="Enter announcement content"
-                      rows={4}
-                      data-testid="textarea-announcement-content"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="announcement-image">Image URL (Optional)</Label>
-                    <Input
-                      id="announcement-image"
-                      value={newAnnouncement.imageUrl}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
-                      placeholder="https://example.com/image.jpg"
-                      data-testid="input-announcement-image"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleCreateAnnouncement}
-                    disabled={createAnnouncementMutation.isPending}
-                    className="w-full"
-                    data-testid="button-create-announcement"
-                  >
-                    {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Announcement</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="announcement-title">Title</Label>
+                      <Input
+                        id="announcement-title"
+                        value={newAnnouncement.title}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Enter announcement title"
+                        data-testid="input-announcement-title"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="announcement-content">Content</Label>
+                      <Textarea
+                        id="announcement-content"
+                        value={newAnnouncement.content}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
+                        placeholder="Enter announcement content"
+                        rows={4}
+                        data-testid="textarea-announcement-content"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="announcement-image">Image URL (Optional)</Label>
+                      <Input
+                        id="announcement-image"
+                        value={newAnnouncement.imageUrl}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
+                        placeholder="https://example.com/image.jpg"
+                        data-testid="input-announcement-image"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCreateAnnouncement}
+                      disabled={createAnnouncementMutation.isPending}
+                      className="w-full"
+                      data-testid="button-create-announcement"
+                    >
+                      {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Existing Announcements</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {allAnnouncements.map((ann) => (
+                      <div key={ann.id} className="p-3 border rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold">{ann.title}</h4>
+                            <p className="text-sm text-gray-500 truncate">{ann.content}</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                             <Badge variant={ann.isActive ? "default" : "outline"}>
+                                {ann.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            <Button variant="outline" size="icon" onClick={() => setEditingAnnouncement(ann)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="destructive" size="icon" onClick={() => handleDeleteAnnouncement(ann.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
+          )}
+
+          {/* Edit Announcement Modal */}
+          {editingAnnouncement && (
+             <Dialog open={!!editingAnnouncement} onOpenChange={() => setEditingAnnouncement(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Announcement</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                   <div>
+                      <Label htmlFor="edit-ann-title">Title</Label>
+                      <Input
+                        id="edit-ann-title"
+                        value={editingAnnouncement.title}
+                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, title: e.target.value } : null)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-ann-content">Content</Label>
+                      <Textarea
+                        id="edit-ann-content"
+                        value={editingAnnouncement.content}
+                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, content: e.target.value } : null)}
+                      />
+                    </div>
+                     <div>
+                      <Label htmlFor="edit-ann-image">Image URL</Label>
+                      <Input
+                        id="edit-ann-image"
+                        value={editingAnnouncement.imageUrl}
+                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, imageUrl: e.target.value } : null)}
+                      />
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="ann-active"
+                          checked={editingAnnouncement.isActive}
+                          onChange={(e) => setEditingAnnouncement(a => a ? { ...a, isActive: e.target.checked } : null)}
+                        />
+                        <Label htmlFor="ann-active">Active</Label>
+                    </div>
+                </div>
+                <Button
+                  onClick={() => updateAnnouncementMutation.mutate(editingAnnouncement)}
+                  disabled={updateAnnouncementMutation.isPending}
+                  className="w-full"
+                >
+                  {updateAnnouncementMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogContent>
+            </Dialog>
           )}
 
           {/* Partners Tab */}
