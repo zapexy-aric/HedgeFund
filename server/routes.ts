@@ -488,7 +488,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const adminId = req.user.id;
       const { userWhatsappNumber, amount, type, remarks } = req.body;
+      console.log(`Admin ${adminId} attempting to adjust balance for ${userWhatsappNumber}`, req.body);
       await storage.adjustUserBalance(adminId, userWhatsappNumber, amount, type, remarks);
+      console.log("Balance adjusted successfully");
       res.json({ message: "Balance adjusted successfully" });
     } catch (error: any) {
       console.error("Error adjusting balance:", error);

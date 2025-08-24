@@ -127,7 +127,7 @@ export default function Dashboard() {
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
-    queryKey: ["/api/user/transactions"],
+    queryKey: ["/api/user/transactions", { limit: 10 }],
     enabled: isAuthenticated,
   });
 
