@@ -162,11 +162,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/user/withdraw', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const withdrawalData = insertWithdrawalRequestSchema.parse(req.body);
+      const withdrawalInputSchema = insertWithdrawalRequestSchema.pick({
+        amount: true,
+        upiId: true,
+        fullName: true,
+      });
+      const withdrawalData = withdrawalInputSchema.parse(req.body);
 
       const request = await storage.createWithdrawalRequest({
         ...withdrawalData,
         userId,
+        status: 'pending',
       });
 
       res.json(request);

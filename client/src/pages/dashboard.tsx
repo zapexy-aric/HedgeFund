@@ -24,7 +24,9 @@ import {
   ArrowUp,
   ArrowDown,
   BarChart3,
-  LogOut
+  LogOut,
+  Share2,
+  Copy
 } from "lucide-react";
 
 import type {
@@ -129,11 +131,19 @@ export default function Dashboard() {
     return plans.find(p => p.id === planId);
   };
 
+  const handleCopyReferral = () => {
+    if (user?.referralCode) {
+      navigator.clipboard.writeText(user.referralCode);
+      toast({ title: "Copied!", description: "Referral code copied to clipboard." });
+    }
+  };
+
   const navItems = [
     { id: "home", icon: Home, label: "Home" },
     { id: "plans", icon: PieChart, label: "Plans" },
     { id: "purchased", icon: Briefcase, label: "Purchased Plans" },
     { id: "profile", icon: User, label: "Profile" },
+    { id: "referrals", icon: Share2, label: "Referrals" },
   ];
 
   if (authLoading) {
@@ -580,6 +590,37 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Referrals Section */}
+          {activeSection === "referrals" && (
+            <div data-testid="section-referrals">
+               <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Refer & Earn</h1>
+                <p className="text-gray-600">Share your referral code to earn rewards.</p>
+              </div>
+
+              <Card className="max-w-md mx-auto">
+                <CardHeader className="text-center">
+                  <CardTitle>Your Referral Code</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="p-4 border-2 border-dashed border-primary rounded-lg mb-4">
+                    <p className="text-3xl font-bold tracking-widest text-primary" data-testid="text-referral-code">
+                      {user?.referralCode || 'N/A'}
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full"
+                    onClick={handleCopyReferral}
+                    disabled={!user?.referralCode}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Code
+                  </Button>
                 </CardContent>
               </Card>
             </div>
