@@ -16,6 +16,7 @@ interface Transaction {
   amount: string;
   status: string;
   createdAt: string;
+  remarks?: string;
 }
 
 export default function TransactionsPage() {
@@ -78,11 +79,12 @@ export default function TransactionsPage() {
                 {transactions.map((transaction) => (
                   <div key={transaction.id} className="p-4 border rounded-lg">
                     <div className="flex justify-between">
-                      <p className="font-semibold capitalize">{transaction.type.replace("_", " ")}</p>
+                      <p className="font-semibold capitalize">{transaction.type.replace(/_/g, " ")}</p>
                       <p className={`font-semibold ${parseFloat(transaction.amount) > 0 ? 'text-secondary' : 'text-accent'}`}>{formatCurrency(transaction.amount)}</p>
                     </div>
                     <p className="text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
                     <p className="text-sm capitalize">{transaction.status}</p>
+                    {transaction.remarks && <p className="text-xs text-gray-500 mt-1">Remarks: {transaction.remarks}</p>}
                   </div>
                 ))}
               </div>
@@ -95,12 +97,13 @@ export default function TransactionsPage() {
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead>Remarks</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions.map((transaction) => (
                       <TableRow key={transaction.id}>
-                        <TableCell className="capitalize flex items-center">
+                        <TableCell className="capitalize flex items-center whitespace-nowrap">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
                             transaction.type === 'deposit' ? 'bg-secondary text-white' :
                             transaction.type === 'withdrawal' ? 'bg-accent text-white' :
@@ -108,11 +111,12 @@ export default function TransactionsPage() {
                           }`}>
                             {getTransactionIcon(transaction.type)}
                           </div>
-                          {transaction.type.replace("_", " ")}
+                          {transaction.type.replace(/_/g, " ")}
                         </TableCell>
-                        <TableCell className={`${parseFloat(transaction.amount) > 0 ? 'text-secondary' : 'text-accent'}`}>{formatCurrency(transaction.amount)}</TableCell>
-                        <TableCell className="capitalize">{transaction.status}</TableCell>
-                        <TableCell>{formatDate(transaction.createdAt)}</TableCell>
+                        <TableCell className={`whitespace-nowrap ${parseFloat(transaction.amount) > 0 ? 'text-secondary' : 'text-accent'}`}>{formatCurrency(transaction.amount)}</TableCell>
+                        <TableCell className="capitalize whitespace-nowrap">{transaction.status}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(transaction.createdAt)}</TableCell>
+                        <TableCell>{transaction.remarks}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

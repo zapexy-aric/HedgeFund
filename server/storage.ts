@@ -93,6 +93,13 @@ export interface IStorage {
   // Admin operations
   getAllTransactions(): Promise<Transaction[]>;
   getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  adjustUserBalance(
+    adminId: string,
+    userWhatsappNumber: string,
+    amount: string,
+    type: "admin_credit" | "admin_debit",
+    remarks: string,
+  ): Promise<void>;
   getAllSettings(): Promise<AdminSetting[]>;
   approveWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
   rejectWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
@@ -518,6 +525,49 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInvestmentPlan(id: string): Promise<void> {
     await db.delete(investmentPlans).where(eq(investmentPlans.id, id));
+  }
+
+  async adjustUserBalance(
+    adminId: string,
+    userWhatsappNumber: string,
+    amount: string,
+    type: "admin_credit" | "admin_debit",
+    remarks: string,
+  ): Promise<void> {
+    const user = await this.getUserByWhatsApp(userWhatsappNumber);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      throw new Error("Invalid amount");
+    }
+
+    const currentBalance = parseFloat(user.depositBalance || "0");
+    const newBalance =
+      type === "admin_credit"
+        ? currentBalance + numericAmount
+        : currentBalance - numericAmount;
+
+    if (newBalance < 0) {
+      throw new Error("Insufficient balance for debit");
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ depositBalance: newBalance.toFixed(2) })
+        .where(eq(users.id, user.id));
+
+      await tx.insert(transactions).values({
+        userId: user.id,
+        type: type,
+        amount: type === "admin_credit" ? `+${amount}` : `-${amount}`,
+        status: "completed",
+        remarks: `Adjusted by admin ${adminId}. Remarks: ${remarks}`,
+      });
+    });
   }
 }
 

@@ -484,6 +484,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/admin/adjust-balance', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.id;
+      const { userWhatsappNumber, amount, type, remarks } = req.body;
+      await storage.adjustUserBalance(adminId, userWhatsappNumber, amount, type, remarks);
+      res.json({ message: "Balance adjusted successfully" });
+    } catch (error: any) {
+      console.error("Error adjusting balance:", error);
+      res.status(500).json({ message: error.message || "Failed to adjust balance" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

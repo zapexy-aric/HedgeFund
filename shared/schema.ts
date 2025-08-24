@@ -97,6 +97,7 @@ export const transactions = pgTable("transactions", {
   utrNumber: varchar("utr_number"),
   upiId: varchar("upi_id"),
   fullName: varchar("full_name"),
+  remarks: text("remarks"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
