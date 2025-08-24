@@ -39,7 +39,10 @@ export interface IStorage {
 
   // Announcements operations
   getActiveAnnouncements(): Promise<Announcement[]>;
+  getAllAnnouncements(): Promise<Announcement[]>;
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement>;
+  deleteAnnouncement(id: string): Promise<void>;
 
   // Investment plans operations
   getActivePlans(): Promise<InvestmentPlan[]>;
@@ -135,6 +138,26 @@ export class DatabaseStorage implements IStorage {
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
     const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
     return newAnnouncement;
+  }
+
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db
+      .select()
+      .from(announcements)
+      .orderBy(desc(announcements.createdAt));
+  }
+
+  async updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement> {
+    const [updatedAnnouncement] = await db
+      .update(announcements)
+      .set(announcement)
+      .where(eq(announcements.id, id))
+      .returning();
+    return updatedAnnouncement;
+  }
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await db.delete(announcements).where(eq(announcements.id, id));
   }
 
   // Investment plans operations

@@ -306,6 +306,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/announcements', isAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ message: "Failed to fetch announcements" });
+    }
+  });
+
+  app.put('/api/admin/announcements/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const announcementData = insertAnnouncementSchema.partial().parse(req.body);
+      const announcement = await storage.updateAnnouncement(id, announcementData);
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error updating announcement:", error);
+      res.status(500).json({ message: "Failed to update announcement" });
+    }
+  });
+
+  app.delete('/api/admin/announcements/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAnnouncement(id);
+      res.json({ message: "Announcement deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      res.status(500).json({ message: "Failed to delete announcement" });
+    }
+  });
+
   app.post('/api/admin/create-partner', isAdmin, async (req, res) => {
     try {
       const partnerData = insertPartnerSchema.parse(req.body);
