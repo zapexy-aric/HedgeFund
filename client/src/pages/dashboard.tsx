@@ -27,52 +27,13 @@ import {
   LogOut
 } from "lucide-react";
 
-interface User {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  depositBalance: string;
-  withdrawalBalance: string;
-  isAdmin?: boolean;
-}
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  imageUrl?: string;
-  createdAt: string;
-}
-
-interface InvestmentPlan {
-  id: string;
-  name: string;
-  dailyPercentage: string;
-  minInvestment: string;
-  maxInvestment: string;
-  durationDays: number;
-  isPopular: boolean;
-  imageUrl?: string;
-}
-
-interface UserInvestment {
-  id: string;
-  planId: string;
-  amount: string;
-  dailyReturn: string;
-  totalReturn: string;
-  daysCompleted: number;
-  status: string;
-  purchaseDate: string;
-}
-
-interface Transaction {
-  id: string;
-  type: string;
-  amount: string;
-  status: string;
-  createdAt: string;
-}
+import type {
+  User,
+  Announcement,
+  InvestmentPlan,
+  UserInvestment,
+  Transaction
+} from "@shared/schema";
 
 export default function Dashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
