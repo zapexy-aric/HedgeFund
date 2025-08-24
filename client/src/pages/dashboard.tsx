@@ -23,7 +23,8 @@ import {
   Calendar,
   ArrowUp,
   ArrowDown,
-  BarChart3
+  BarChart3,
+  LogOut
 } from "lucide-react";
 
 interface User {
@@ -197,35 +198,37 @@ export default function Dashboard() {
             <span className="text-gray-600" data-testid="text-welcome">
               Welcome, <span className="font-semibold">{user?.firstName || user?.lastName || 'User'}</span>
             </span>
-            {user?.isAdmin && (
+            <div className="hidden md:flex items-center space-x-4">
+              {user?.isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = '/admin'}
+                  data-testid="button-admin-panel"
+                >
+                  Admin Panel
+                </Button>
+              )}
               <Button 
-                variant="outline" 
+                variant="ghost"
                 size="sm"
-                onClick={() => window.location.href = '/admin'}
-                data-testid="button-admin-panel"
+                onClick={async () => {
+                  await fetch('/api/logout', { method: 'POST' });
+                  window.location.reload();
+                }}
+                data-testid="button-logout"
               >
-                Admin Panel
+                <LogOut className="h-4 w-4" />
               </Button>
-            )}
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={async () => {
-                await fetch('/api/logout', { method: 'POST' });
-                window.location.reload();
-              }}
-              data-testid="button-logout"
-            >
-              <ArrowUp className="h-4 w-4 rotate-45" />
-            </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="flex">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[88px]">
-          <div className="p-4 space-y-4">
+        <nav className="w-20 bg-white shadow-sm h-screen sticky top-[88px] flex flex-col">
+          <div className="p-4 space-y-4 flex-grow">
             {navItems.map((item) => (
               <Button
                 key={item.id}
@@ -238,6 +241,20 @@ export default function Dashboard() {
                 <item.icon className="h-5 w-5" />
               </Button>
             ))}
+          </div>
+          <div className="p-4 md:hidden">
+             <Button
+                variant="ghost"
+                size="icon"
+                className="w-12 h-12"
+                onClick={async () => {
+                  await fetch('/api/logout', { method: 'POST' });
+                  window.location.reload();
+                }}
+                data-testid="button-mobile-logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
           </div>
         </nav>
 
