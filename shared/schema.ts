@@ -66,7 +66,6 @@ export const investmentPlans = pgTable("investment_plans", {
   minInvestment: decimal("min_investment", { precision: 10, scale: 2 }).notNull(),
   maxInvestment: decimal("max_investment", { precision: 10, scale: 2 }).notNull(),
   durationDays: integer("duration_days").notNull(),
-  imageUrl: text("image_url"),
   isActive: boolean("is_active").default(true),
   isPopular: boolean("is_popular").default(false),
   createdAt: timestamp("created_at").defaultNow(),

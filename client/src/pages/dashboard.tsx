@@ -334,13 +334,6 @@ export default function Dashboard() {
                     className="hover:shadow-md transition-shadow duration-200 flex flex-col"
                     data-testid={`card-plan-${plan.id}`}
                   >
-                    {plan.imageUrl && (
-                      <img
-                        src={plan.imageUrl}
-                        alt={plan.name}
-                        className="w-full h-32 object-cover"
-                      />
-                    )}
                     <div className="p-4 flex flex-col flex-grow">
                       <CardTitle className="text-lg font-bold mb-2">{plan.name}</CardTitle>
                       <div className="text-2xl font-bold text-primary mb-4">
@@ -399,13 +392,6 @@ export default function Dashboard() {
                   
                   return (
                     <Card key={investment.id} className="overflow-hidden" data-testid={`card-investment-${investment.id}`}>
-                      {plan?.imageUrl && (
-                        <img
-                          src={plan.imageUrl}
-                          alt={plan?.name || ''}
-                          className="w-full h-40 object-cover"
-                        />
-                      )}
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>

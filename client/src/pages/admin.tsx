@@ -81,8 +81,7 @@ export default function AdminDashboard() {
     minInvestment: "",
     maxInvestment: "",
     durationDays: "",
-    isPopular: false,
-    imageUrl: ""
+    isPopular: false
   });
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
@@ -92,6 +91,9 @@ export default function AdminDashboard() {
   const [newPartner, setNewPartner] = useState({
     name: "",
     logoUrl: ""
+  });
+  const [siteSettings, setSiteSettings] = useState({
+    deposit_upi_id: "",
   });
 
   // Check if user is admin
@@ -124,6 +126,14 @@ export default function AdminDashboard() {
   const { data: plans = [] } = useQuery<InvestmentPlan[]>({
     queryKey: ["/api/plans"],
     enabled: isAuthenticated && user?.isAdmin,
+  });
+
+  useQuery({
+    queryKey: ["/api/deposit-upi"],
+    enabled: isAuthenticated && user?.isAdmin,
+    onSuccess: (data: any) => {
+      setSiteSettings(prev => ({ ...prev, deposit_upi_id: data.upiId }));
+    }
   });
 
   const { data: allAnnouncements = [] } = useQuery<Announcement[]>({
@@ -177,7 +187,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
-      setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false, imageUrl: "" });
+      setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false });
       toast({ title: "Success", description: "Investment plan created successfully" });
     },
     onError: () => {
@@ -267,6 +277,19 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (settings: { key: string; value: string }) => {
+      await apiRequest("PUT", `/api/admin/settings/${settings.key}`, { value: settings.value });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/deposit-upi"] });
+      toast({ title: "Success", description: "Settings updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update settings", variant: "destructive" });
+    },
+  });
+
   const handleDeletePlan = (planId: string) => {
     if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
       deletePlanMutation.mutate(planId);
@@ -334,13 +357,14 @@ export default function AdminDashboard() {
   const pendingWithdrawals = withdrawalRequests.filter(w => w.status === 'pending');
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: Settings },
+    { id: "overview", label: "Overview", icon: Users },
     { id: "users", label: "Users", icon: Users },
     { id: "deposits", label: "Deposits", icon: CreditCard },
     { id: "withdrawals", label: "Withdrawals", icon: Banknote },
     { id: "plans", label: "Plans", icon: PlusCircle },
     { id: "announcements", label: "Announcements", icon: MessageSquare },
     { id: "partners", label: "Partners", icon: Building },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   const renderSidebarContent = () => (
@@ -690,16 +714,6 @@ export default function AdminDashboard() {
                         data-testid="input-plan-duration"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="plan-image-url">Image URL</Label>
-                      <Input
-                        id="plan-image-url"
-                        value={newPlan.imageUrl}
-                        onChange={(e) => setNewPlan(prev => ({ ...prev, imageUrl: e.target.value }))}
-                        placeholder="Enter image URL"
-                        data-testid="input-plan-image-url"
-                      />
-                    </div>
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
@@ -825,14 +839,6 @@ export default function AdminDashboard() {
                         type="number"
                         value={editingPlan.durationDays}
                         onChange={(e) => setEditingPlan(p => p ? { ...p, durationDays: parseInt(e.target.value) } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-plan-image-url">Image URL</Label>
-                      <Input
-                        id="edit-plan-image-url"
-                        value={editingPlan.imageUrl || ''}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, imageUrl: e.target.value } : null)}
                       />
                     </div>
                     <div className="flex items-center space-x-2">
@@ -1038,6 +1044,35 @@ export default function AdminDashboard() {
                     data-testid="button-create-partner"
                   >
                     {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === "settings" && (
+            <div data-testid="section-admin-settings">
+              <h1 className="text-3xl font-bold text-gray-800 mb-6">Site Settings</h1>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Deposit Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="setting-upi-id">Deposit UPI ID</Label>
+                    <Input
+                      id="setting-upi-id"
+                      value={siteSettings.deposit_upi_id}
+                      onChange={(e) => setSiteSettings(prev => ({ ...prev, deposit_upi_id: e.target.value }))}
+                      placeholder="Enter UPI ID for deposits"
+                    />
+                  </div>
+                   <Button
+                    onClick={() => updateSettingsMutation.mutate({ key: 'deposit_upi_id', value: siteSettings.deposit_upi_id })}
+                    disabled={updateSettingsMutation.isPending}
+                  >
+                    {updateSettingsMutation.isPending ? "Saving..." : "Save UPI ID"}
                   </Button>
                 </CardContent>
               </Card>
