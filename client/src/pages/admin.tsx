@@ -94,6 +94,7 @@ export default function AdminDashboard() {
   });
   const [siteSettings, setSiteSettings] = useState({
     deposit_upi_id: "",
+    telegram_support_url: "",
   });
 
   // Check if user is admin
@@ -133,6 +134,14 @@ export default function AdminDashboard() {
     enabled: isAuthenticated && user?.isAdmin,
     onSuccess: (data: any) => {
       setSiteSettings(prev => ({ ...prev, deposit_upi_id: data.upiId }));
+    }
+  });
+
+  useQuery({
+    queryKey: ["/api/admin/telegram-support"],
+    enabled: isAuthenticated && user?.isAdmin,
+    onSuccess: (data: any) => {
+      setSiteSettings(prev => ({ ...prev, telegram_support_url: data.telegramUrl }));
     }
   });
 
@@ -286,8 +295,13 @@ export default function AdminDashboard() {
     mutationFn: async (settings: { key: string; value: string }) => {
       await apiRequest("PUT", `/api/admin/settings/${settings.key}`, { value: settings.value });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/deposit-upi"] });
+    onSuccess: (data, variables) => {
+      if (variables.key === 'deposit_upi_id') {
+        queryClient.invalidateQueries({ queryKey: ["/api/deposit-upi"] });
+      }
+      if (variables.key === 'telegram_support_url') {
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/telegram-support"] });
+      }
       toast({ title: "Success", description: "Settings updated successfully" });
     },
     onError: () => {
@@ -1097,8 +1111,8 @@ export default function AdminDashboard() {
 
           {/* Settings Tab */}
           {activeTab === "settings" && (
-            <div data-testid="section-admin-settings">
-              <h1 className="text-3xl font-bold text-gray-800 mb-6">Site Settings</h1>
+            <div data-testid="section-admin-settings" className="space-y-6">
+              <h1 className="text-3xl font-bold text-gray-800">Site Settings</h1>
               <Card>
                 <CardHeader>
                   <CardTitle>Deposit Information</CardTitle>
@@ -1118,6 +1132,29 @@ export default function AdminDashboard() {
                     disabled={updateSettingsMutation.isPending}
                   >
                     {updateSettingsMutation.isPending ? "Saving..." : "Save UPI ID"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+               <Card>
+                <CardHeader>
+                  <CardTitle>Support Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="setting-support-url">Customer Support Link</Label>
+                    <Input
+                      id="setting-support-url"
+                      value={siteSettings.telegram_support_url}
+                      onChange={(e) => setSiteSettings(prev => ({ ...prev, telegram_support_url: e.target.value }))}
+                      placeholder="Enter full URL for support chat"
+                    />
+                  </div>
+                   <Button
+                    onClick={() => updateSettingsMutation.mutate({ key: 'telegram_support_url', value: siteSettings.telegram_support_url })}
+                    disabled={updateSettingsMutation.isPending}
+                  >
+                    {updateSettingsMutation.isPending ? "Saving..." : "Save Support Link"}
                   </Button>
                 </CardContent>
               </Card>
