@@ -100,12 +100,18 @@ export function setupAuth(app: Express) {
       }
 
       const hashedPassword = await hashPassword(password);
+
+      // Generate a unique referral code
+      const ownReferralCode = randomBytes(4).toString('hex').toUpperCase();
+
       const user = await storage.createUser({
         whatsappNumber,
         password: hashedPassword,
         firstName,
         lastName,
-        referralCode,
+        referralCode: ownReferralCode, // User's own code
+        // The `referralCode` from the request body is the code of the person who referred them
+        // We can add logic here later to handle giving bonuses, etc.
       });
 
       req.login(user, (err) => {
