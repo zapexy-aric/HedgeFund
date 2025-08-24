@@ -30,6 +30,8 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined>;
+  getUserByReferralCode(referralCode: string): Promise<User | undefined>;
+  getReferredUserCount(userId: string): Promise<number>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
 
@@ -89,6 +91,19 @@ export class DatabaseStorage implements IStorage {
   async getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.whatsappNumber, whatsappNumber));
     return user;
+  }
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.referralCode, referralCode));
+    return user;
+  }
+
+  async getReferredUserCount(userId: string): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(eq(users.referredBy, userId));
+    return result[0].count;
   }
 
   async createUser(userData: InsertUser): Promise<User> {
@@ -305,6 +320,28 @@ export class DatabaseStorage implements IStorage {
       .set({ status: "approved", processedAt: new Date() })
       .where(eq(withdrawalRequests.id, id))
       .returning();
+
+    if (withdrawal) {
+      // Deduct from user's withdrawal balance
+      const user = await this.getUser(withdrawal.userId);
+      if (user) {
+        const currentBalance = parseFloat(user.withdrawalBalance || "0");
+        const withdrawalAmount = parseFloat(withdrawal.amount);
+        const newBalance = (currentBalance - withdrawalAmount).toFixed(2);
+        await this.updateUserBalances(withdrawal.userId, undefined, newBalance);
+      }
+
+      // Create a completed withdrawal transaction
+      await this.createTransaction({
+        userId: withdrawal.userId,
+        type: "withdrawal",
+        amount: `-${withdrawal.amount}`,
+        status: "completed",
+        utrNumber: withdrawal.id, // Use withdrawal ID as a reference
+        upiId: withdrawal.upiId,
+        fullName: withdrawal.fullName,
+      });
+    }
     return withdrawal;
   }
 
