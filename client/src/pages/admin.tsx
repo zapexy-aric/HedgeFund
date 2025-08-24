@@ -682,7 +682,6 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {plans.map((plan) => (
-                        {plans.map((plan) => (
                           <div
                             key={plan.id}
                             className="p-3 border rounded-lg"
