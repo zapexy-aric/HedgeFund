@@ -118,7 +118,13 @@ export class DatabaseStorage implements IStorage {
 
   // Partners operations
   async getActivePartners(): Promise<Partner[]> {
-    return await db.select().from(partners).where(eq(partners.isActive, true));
+    return await db.select({
+      id: partners.id,
+      name: partners.name,
+      logoUrl: partners.logoUrl,
+      isActive: partners.isActive,
+      createdAt: partners.createdAt,
+    }).from(partners).where(eq(partners.isActive, true));
   }
 
   async createPartner(partner: InsertPartner): Promise<Partner> {

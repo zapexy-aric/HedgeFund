@@ -3,12 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { AuthModals } from "@/components/AuthModals";
 import { Menu, X } from "lucide-react";
-
-interface Partner {
-  id: string;
-  name: string;
-  logoUrl: string;
-}
+import type { Partner } from "@shared/schema";
 
 export default function Landing() {
   const [showAuthModal, setShowAuthModal] = useState<"login" | "signup" | null>(null);
