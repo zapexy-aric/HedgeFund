@@ -23,6 +23,7 @@ import {
   CreditCard, 
   Banknote, 
   PlusCircle, 
+  LayoutDashboard,
   Settings,
   CheckCircle,
   XCircle,
@@ -63,6 +64,15 @@ interface WithdrawalRequest {
   createdAt: string;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 interface InvestmentPlan {
   id: string;
   name: string;
@@ -97,6 +107,12 @@ export default function AdminDashboard() {
     name: "",
     logoUrl: ""
   });
+  const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
+  const [settings, setSettings] = useState({
+    deposit_qr_code_url: "",
+    deposit_upi_id: "",
+    telegram_support_url: "",
+  });
 
   // Check if user is admin
   useEffect(() => {
@@ -127,6 +143,26 @@ export default function AdminDashboard() {
 
   const { data: plans = [] } = useQuery<InvestmentPlan[]>({
     queryKey: ["/api/plans"],
+    enabled: isAuthenticated && user?.isAdmin,
+  });
+
+  const { data: settingsData } = useQuery<any[]>({
+    queryKey: ["/api/admin/settings"],
+    enabled: isAuthenticated && user?.isAdmin,
+  });
+
+  useEffect(() => {
+    if (settingsData) {
+      const newSettings: any = {};
+      settingsData.forEach((setting: { key: string, value: string }) => {
+        newSettings[setting.key] = setting.value;
+      });
+      setSettings(newSettings);
+    }
+  }, [settingsData]);
+
+  const { data: announcements = [] } = useQuery<Announcement[]>({
+    queryKey: ["/api/admin/announcements"],
     enabled: isAuthenticated && user?.isAdmin,
   });
 
@@ -212,6 +248,62 @@ export default function AdminDashboard() {
     },
   });
 
+  const updatePlanMutation = useMutation({
+    mutationFn: async (planData: any) => {
+      await apiRequest("PUT", `/api/admin/update-plan/${editingPlan?.id}`, planData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
+      setEditingPlan(null);
+      setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false });
+      toast({ title: "Success", description: "Investment plan updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update investment plan", variant: "destructive" });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/announcements/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      toast({ title: "Success", description: "Announcement deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete announcement", variant: "destructive" });
+    },
+  });
+
+  const deletePlanMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admin/delete-plan/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
+      toast({ title: "Success", description: "Plan deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete plan", variant: "destructive" });
+    },
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (settingsData: { key: string; value: string }[]) => {
+      for (const setting of settingsData) {
+        await apiRequest("PUT", `/api/admin/settings/${setting.key}`, { value: setting.value });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      toast({ title: "Success", description: "Settings updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update settings", variant: "destructive" });
+    },
+  });
+
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -241,6 +333,35 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleUpdatePlan = () => {
+    if (!editingPlan || !newPlan.name || !newPlan.dailyPercentage || !newPlan.minInvestment || !newPlan.maxInvestment || !newPlan.durationDays) {
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    updatePlanMutation.mutate({
+      ...newPlan,
+      durationDays: parseInt(newPlan.durationDays),
+      isActive: true,
+    });
+  };
+
+  const handleEditPlan = (plan: InvestmentPlan) => {
+    setEditingPlan(plan);
+    setNewPlan({
+      name: plan.name,
+      dailyPercentage: plan.dailyPercentage,
+      minInvestment: plan.minInvestment,
+      maxInvestment: plan.maxInvestment,
+      durationDays: plan.durationDays.toString(),
+      isPopular: plan.isPopular,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPlan(null);
+    setNewPlan({ name: "", dailyPercentage: "", minInvestment: "", maxInvestment: "", durationDays: "", isPopular: false });
+  };
+
   const handleCreateAnnouncement = () => {
     if (!newAnnouncement.title || !newAnnouncement.content) {
       toast({ title: "Error", description: "Please fill in title and content", variant: "destructive" });
@@ -267,13 +388,14 @@ export default function AdminDashboard() {
   const pendingWithdrawals = withdrawalRequests.filter(w => w.status === 'pending');
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: Settings },
+    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "users", label: "Users", icon: Users },
     { id: "deposits", label: "Deposits", icon: CreditCard },
     { id: "withdrawals", label: "Withdrawals", icon: Banknote },
     { id: "plans", label: "Plans", icon: PlusCircle },
     { id: "announcements", label: "Announcements", icon: MessageSquare },
     { id: "partners", label: "Partners", icon: Building },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   if (authLoading) {
@@ -615,13 +737,24 @@ export default function AdminDashboard() {
                       <Label htmlFor="plan-popular">Mark as Popular</Label>
                     </div>
                     <Button
-                      onClick={handleCreatePlan}
-                      disabled={createPlanMutation.isPending}
+                      onClick={editingPlan ? handleUpdatePlan : handleCreatePlan}
+                      disabled={createPlanMutation.isPending || updatePlanMutation.isPending}
                       className="w-full"
                       data-testid="button-create-plan"
                     >
-                      {createPlanMutation.isPending ? "Creating..." : "Create Plan"}
+                      {editingPlan
+                        ? (updatePlanMutation.isPending ? "Updating..." : "Update Plan")
+                        : (createPlanMutation.isPending ? "Creating..." : "Create Plan")}
                     </Button>
+                    {editingPlan && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel Edit
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -646,6 +779,21 @@ export default function AdminDashboard() {
                               </p>
                             </div>
                             <div className="flex space-x-1">
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => handleEditPlan(plan)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                onClick={() => deletePlanMutation.mutate(plan.id)}
+                                disabled={deletePlanMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                               {plan.isPopular && <Badge variant="secondary">Popular</Badge>}
                               <Badge variant={plan.isActive ? "default" : "outline"}>
                                 {plan.isActive ? "Active" : "Inactive"}
@@ -666,52 +814,88 @@ export default function AdminDashboard() {
             <div data-testid="section-admin-announcements">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Announcements</h1>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Announcement</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="announcement-title">Title</Label>
-                    <Input
-                      id="announcement-title"
-                      value={newAnnouncement.title}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Enter announcement title"
-                      data-testid="input-announcement-title"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="announcement-content">Content</Label>
-                    <Textarea
-                      id="announcement-content"
-                      value={newAnnouncement.content}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
-                      placeholder="Enter announcement content"
-                      rows={4}
-                      data-testid="textarea-announcement-content"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="announcement-image">Image URL (Optional)</Label>
-                    <Input
-                      id="announcement-image"
-                      value={newAnnouncement.imageUrl}
-                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
-                      placeholder="https://example.com/image.jpg"
-                      data-testid="input-announcement-image"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleCreateAnnouncement}
-                    disabled={createAnnouncementMutation.isPending}
-                    className="w-full"
-                    data-testid="button-create-announcement"
-                  >
-                    {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Create New Announcement</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="announcement-title">Title</Label>
+                      <Input
+                        id="announcement-title"
+                        value={newAnnouncement.title}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Enter announcement title"
+                        data-testid="input-announcement-title"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="announcement-content">Content</Label>
+                      <Textarea
+                        id="announcement-content"
+                        value={newAnnouncement.content}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
+                        placeholder="Enter announcement content"
+                        rows={4}
+                        data-testid="textarea-announcement-content"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="announcement-image">Image URL (Optional)</Label>
+                      <Input
+                        id="announcement-image"
+                        value={newAnnouncement.imageUrl}
+                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
+                        placeholder="https://example.com/image.jpg"
+                        data-testid="input-announcement-image"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleCreateAnnouncement}
+                      disabled={createAnnouncementMutation.isPending}
+                      className="w-full"
+                      data-testid="button-create-announcement"
+                    >
+                      {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Existing Announcements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {announcements.map((announcement) => (
+                        <div
+                          key={announcement.id}
+                          className="p-3 border rounded-lg"
+                          data-testid={`card-admin-announcement-${announcement.id}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold">{announcement.title}</h4>
+                              <p className="text-sm text-gray-500 truncate">{announcement.content}</p>
+                            </div>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => deleteAnnouncementMutation.mutate(announcement.id)}
+                                disabled={deleteAnnouncementMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -752,6 +936,56 @@ export default function AdminDashboard() {
                     data-testid="button-create-partner"
                   >
                     {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === "settings" && (
+            <div data-testid="section-admin-settings">
+              <h1 className="text-3xl font-bold text-gray-800 mb-6">Site Settings</h1>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Deposit & Support</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="qr-code-url">QR Code URL</Label>
+                    <Input
+                      id="qr-code-url"
+                      value={settings.deposit_qr_code_url}
+                      onChange={(e) => setSettings(prev => ({ ...prev, deposit_qr_code_url: e.target.value }))}
+                      placeholder="Enter QR code image URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="upi-id">UPI ID</Label>
+                    <Input
+                      id="upi-id"
+                      value={settings.deposit_upi_id}
+                      onChange={(e) => setSettings(prev => ({ ...prev, deposit_upi_id: e.target.value }))}
+                      placeholder="Enter UPI ID"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="helpline-link">Helpline Link</Label>
+                    <Input
+                      id="helpline-link"
+                      value={settings.telegram_support_url}
+                      onChange={(e) => setSettings(prev => ({ ...prev, telegram_support_url: e.target.value }))}
+                      placeholder="Enter Telegram/WhatsApp link"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => {
+                      const settingsToUpdate = Object.entries(settings).map(([key, value]) => ({ key, value }));
+                      updateSettingsMutation.mutate(settingsToUpdate);
+                    }}
+                    disabled={updateSettingsMutation.isPending}
+                  >
+                    {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
                   </Button>
                 </CardContent>
               </Card>
