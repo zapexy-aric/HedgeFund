@@ -268,34 +268,8 @@ export default function Dashboard() {
                 <p className="text-gray-600">Stay updated with the latest announcements and opportunities</p>
               </div>
               
-              {/* Admin Announcements */}
-              <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                {announcements.map((announcement) => (
-                  <Card key={announcement.id} data-testid={`card-announcement-${announcement.id}`}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start space-x-4">
-                        {announcement.imageUrl && (
-                          <img 
-                            src={announcement.imageUrl} 
-                            alt={announcement.title}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800 mb-2">{announcement.title}</h3>
-                          <p className="text-gray-600 text-sm">{announcement.content}</p>
-                          <span className="text-xs text-gray-500 mt-2 block">
-                            {formatDate(announcement.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
               {/* Quick Stats */}
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
                 <Card className="bg-gradient-to-r from-secondary to-green-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -335,6 +309,32 @@ export default function Dashboard() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+
+              {/* Admin Announcements */}
+              <div className="grid lg:grid-cols-2 gap-6">
+                {announcements.map((announcement) => (
+                  <Card key={announcement.id} data-testid={`card-announcement-${announcement.id}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        {announcement.imageUrl && (
+                          <img
+                            src={announcement.imageUrl}
+                            alt={announcement.title}
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800 mb-2">{announcement.title}</h3>
+                          <p className="text-gray-600 text-sm">{announcement.content}</p>
+                          <span className="text-xs text-gray-500 mt-2 block">
+                            {formatDate(announcement.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
