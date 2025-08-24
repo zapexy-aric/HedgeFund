@@ -36,6 +36,8 @@ app.use((req, res, next) => {
   next();
 });
 
+import { startCronJobs } from "./cron";
+
 (async () => {
   const server = await registerRoutes(app);
 
@@ -55,6 +57,9 @@ app.use((req, res, next) => {
   } else {
     serveStatic(app);
   }
+
+  // Start cron jobs
+  startCronJobs();
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.

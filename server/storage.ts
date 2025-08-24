@@ -22,14 +22,27 @@ import {
   type InsertUserInvestment,
   type InsertTransaction,
   type InsertWithdrawalRequest,
+  type ReferralEarning,
+  type InsertReferralEarning,
+  referralEarnings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
+import { randomBytes } from "crypto";
+
+// Helper function to generate a random referral code
+function generateReferralCode(length = 8): string {
+  return randomBytes(Math.ceil(length / 2))
+    .toString("hex")
+    .slice(0, length)
+    .toUpperCase();
+}
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined>;
+  getUserByReferralCode(code: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
 
@@ -49,6 +62,14 @@ export interface IStorage {
   getUserInvestments(userId: string): Promise<UserInvestment[]>;
   createUserInvestment(investment: InsertUserInvestment): Promise<UserInvestment>;
   updateInvestmentProgress(id: string, daysCompleted: number, totalReturn: string): Promise<UserInvestment>;
+
+  // Referral earnings operations
+  createReferralEarning(
+    earning: InsertReferralEarning,
+  ): Promise<ReferralEarning>;
+  getReferredUsers(userId: string): Promise<User[]>;
+  getUnclaimedReferralEarnings(userId: string): Promise<ReferralEarning[]>;
+  claimReferralEarnings(userId: string): Promise<{ totalClaimed: string }>;
 
   // Transactions operations
   getUserTransactions(userId: string): Promise<Transaction[]>;
@@ -82,15 +103,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.whatsappNumber, whatsappNumber));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.whatsappNumber, whatsappNumber));
+    return user;
+  }
+
+  async getUserByReferralCode(code: string): Promise<User | undefined> {
+    if (!code) return undefined;
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.referralCode, code));
     return user;
   }
 
   async createUser(userData: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning();
+    const { referralCode: referrerCode, ...restUserData } = userData;
+
+    const valuesToInsert: InsertUser = { ...restUserData };
+
+    // Handle referral
+    if (referrerCode) {
+      const referrer = await this.getUserByReferralCode(referrerCode);
+      if (referrer) {
+        valuesToInsert.referredBy = referrer.id;
+      }
+    }
+
+    // Generate a unique referral code for the new user
+    let newReferralCode: string;
+    let existingUser: User | undefined;
+    do {
+      newReferralCode = generateReferralCode();
+      existingUser = await this.getUserByReferralCode(newReferralCode);
+    } while (existingUser);
+
+    valuesToInsert.referralCode = newReferralCode;
+
+    const [user] = await db.insert(users).values(valuesToInsert).returning();
     return user;
   }
 
@@ -187,6 +239,74 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userInvestments.id, id))
       .returning();
     return updatedInvestment;
+  }
+
+  // Referral earnings operations
+  async createReferralEarning(
+    earning: InsertReferralEarning,
+  ): Promise<ReferralEarning> {
+    const [newEarning] = await db
+      .insert(referralEarnings)
+      .values(earning)
+      .returning();
+    return newEarning;
+  }
+
+  async getReferredUsers(userId: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.referredBy, userId));
+  }
+
+  async getUnclaimedReferralEarnings(
+    userId: string,
+  ): Promise<ReferralEarning[]> {
+    return await db
+      .select()
+      .from(referralEarnings)
+      .where(
+        and(
+          eq(referralEarnings.referrerId, userId),
+          eq(referralEarnings.status, "unclaimed"),
+        ),
+      );
+  }
+
+  async claimReferralEarnings(
+    userId: string,
+  ): Promise<{ totalClaimed: string }> {
+    const unclaimedEarnings = await this.getUnclaimedReferralEarnings(userId);
+
+    if (unclaimedEarnings.length === 0) {
+      return { totalClaimed: "0.00" };
+    }
+
+    const totalClaimed = unclaimedEarnings.reduce(
+      (sum, earning) => sum + parseFloat(earning.amount),
+      0,
+    );
+
+    await db.transaction(async (tx) => {
+      // Add to user's withdrawal balance
+      const user = await this.getUser(userId);
+      if (user) {
+        const currentBalance = parseFloat(user.withdrawalBalance || "0");
+        const newBalance = (currentBalance + totalClaimed).toFixed(2);
+        await tx
+          .update(users)
+          .set({ withdrawalBalance: newBalance })
+          .where(eq(users.id, userId));
+      }
+
+      // Mark earnings as claimed
+      const earningIds = unclaimedEarnings.map((e) => e.id);
+      if (earningIds.length > 0) {
+        await tx
+          .update(referralEarnings)
+          .set({ status: "claimed" })
+          .where(inArray(referralEarnings.id, earningIds));
+      }
+    });
+
+    return { totalClaimed: totalClaimed.toFixed(2) };
   }
 
   // Transactions operations

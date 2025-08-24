@@ -166,6 +166,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/user/referrals", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const referredUsers = await storage.getReferredUsers(userId);
+      const sanitizedUsers = referredUsers.map((user) => ({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        whatsappNumber:
+          user.whatsappNumber.slice(0, -4) + "****",
+      }));
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching referred users:", error);
+      res.status(500).json({ message: "Failed to fetch referred users" });
+    }
+  });
+
+  app.get(
+    "/api/user/referral-earnings",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const earnings = await storage.getUnclaimedReferralEarnings(userId);
+        res.json(earnings);
+      } catch (error) {
+        console.error("Error fetching referral earnings:", error);
+        res.status(500).json({ message: "Failed to fetch referral earnings" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/user/claim-referral-earnings",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const result = await storage.claimReferralEarnings(userId);
+        res.json(result);
+      } catch (error) {
+        console.error("Error claiming referral earnings:", error);
+        res.status(500).json({ message: "Failed to claim referral earnings" });
+      }
+    },
+  );
+
   // Admin settings
   app.get('/api/admin/qr-code', async (req, res) => {
     try {
