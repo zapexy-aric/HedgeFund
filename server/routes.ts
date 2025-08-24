@@ -105,13 +105,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/user/all-transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const transactions = await storage.getAllUserTransactions(userId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching all user transactions:", error);
+      res.status(500).json({ message: "Failed to fetch all user transactions" });
+    }
+  });
+
   app.post('/api/user/purchase-plan', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      console.log(`Purchase attempt by user ${userId} with body:`, req.body);
       const { planId, amount } = purchasePlanSchema.parse(req.body);
 
       // Get plan details
       const plan = await storage.getPlanById(planId);
+      console.log("Fetched plan:", plan);
       if (!plan) {
         return res.status(404).json({ message: "Investment plan not found" });
       }
@@ -119,6 +132,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate daily return
       const investmentAmount = parseFloat(amount);
       const dailyReturnAmount = (investmentAmount * parseFloat(plan.dailyPercentage)) / 100;
+      console.log(`Investment: ${investmentAmount}, Daily Return: ${dailyReturnAmount}`);
+
+      // Check user balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const currentBalance = parseFloat(user.depositBalance || "0");
+      if (currentBalance < investmentAmount) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
 
       // Create investment
       const investment = await storage.createUserInvestment({
@@ -127,6 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount,
         dailyReturn: dailyReturnAmount.toFixed(2),
       });
+      console.log("Created investment:", investment);
 
       // Create transaction record
       await storage.createTransaction({
@@ -135,14 +160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: `-${amount}`,
         status: "completed",
       });
+      console.log("Created transaction record");
 
       // Update user deposit balance (subtract investment amount)
-      const user = await storage.getUser(userId);
-      if (user) {
-        const currentBalance = parseFloat(user.depositBalance || "0");
-        const newBalance = (currentBalance - investmentAmount).toFixed(2);
-        await storage.updateUserBalances(userId, newBalance);
-      }
+      const newBalance = (currentBalance - investmentAmount).toFixed(2);
+      await storage.updateUserBalances(userId, newBalance);
+      console.log(`Updated user ${userId} balance from ${currentBalance} to ${newBalance}`);
 
       res.json(investment);
     } catch (error) {

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import ReferralsPage from "./referrals";
 import ClaimRewardsPage from "./claim-rewards";
+import TransactionsPage from "./transactions";
 
 interface User {
   id: string;
@@ -540,8 +541,9 @@ export default function Dashboard() {
               
               {/* Recent Transactions */}
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Recent Transactions</CardTitle>
+                  <Button variant="link" onClick={() => setActiveSection("transactions")}>View All</Button>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -597,6 +599,9 @@ export default function Dashboard() {
 
           {/* Claim Rewards Section */}
           {activeSection === "claim" && <ClaimRewardsPage />}
+
+          {/* Transactions Section */}
+          {activeSection === "transactions" && <TransactionsPage />}
         </main>
       </div>
 

@@ -77,6 +77,7 @@ export interface IStorage {
 
   // Transactions operations
   getUserTransactions(userId: string): Promise<Transaction[]>;
+  getAllUserTransactions(userId: string): Promise<Transaction[]>;
   getTotalWithdrawn(userId: string): Promise<string>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: string, status: string): Promise<Transaction>;
@@ -369,6 +370,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactions.userId, userId))
       .orderBy(desc(transactions.createdAt))
       .limit(10);
+  }
+
+  async getAllUserTransactions(userId: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt));
   }
 
   async getTotalWithdrawn(userId: string): Promise<string> {

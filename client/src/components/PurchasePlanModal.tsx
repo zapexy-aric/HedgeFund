@@ -137,8 +137,8 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
   if (!plan) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" data-testid="modal-purchase-plan">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-sm" data-testid="modal-purchase-plan">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Purchase Investment Plan</DialogTitle>
           <p className="text-center text-gray-600">Invest in {plan.name}</p>
