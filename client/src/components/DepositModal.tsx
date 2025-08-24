@@ -24,8 +24,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const [amount, setAmount] = useState("");
   const [utrNumber, setUtrNumber] = useState("");
 
-  const { data: qrCodeData } = useQuery<{ qrCodeUrl: string }>({
-    queryKey: ["/api/admin/qr-code"],
+  const { data: depositInfo } = useQuery<{ qrCodeUrl: string; upiId: string }>({
+    queryKey: ["/api/deposit-info"],
     enabled: isOpen,
   });
 
@@ -100,12 +100,24 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         <div className="space-y-4">
           <div className="p-4 bg-background rounded-lg">
             <Label className="text-sm font-medium text-gray-500">Step 1: Pay using UPI</Label>
-            <p className="text-gray-600">Scan the QR code below with your UPI app.</p>
-            <div className="mt-2 flex items-center justify-center p-3 bg-white border rounded-md">
-              {qrCodeData?.qrCodeUrl ? (
-                <img src={qrCodeData.qrCodeUrl} alt="UPI QR Code" className="w-48 h-48" />
+            <p className="text-gray-600">Scan the QR code or use the UPI ID below.</p>
+            <div className="mt-2 flex flex-col items-center justify-center p-3 bg-white border rounded-md">
+              {depositInfo?.qrCodeUrl ? (
+                <img src={depositInfo.qrCodeUrl} alt="UPI QR Code" className="w-48 h-48" />
               ) : (
                 <p>Loading QR Code...</p>
+              )}
+              {depositInfo?.upiId && (
+                <div className="mt-4 w-full flex items-center justify-between p-2 bg-gray-100 rounded-md">
+                  <span className="font-mono text-sm text-primary">{depositInfo.upiId}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCopy(depositInfo.upiId)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
             </div>
           </div>

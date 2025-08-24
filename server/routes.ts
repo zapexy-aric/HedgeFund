@@ -58,6 +58,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/deposit-info', async (req, res) => {
+    try {
+      const qrCodeSetting = await storage.getAdminSetting("deposit_qr_code_url");
+      const upiIdSetting = await storage.getAdminSetting("deposit_upi_id");
+      res.json({
+        qrCodeUrl: qrCodeSetting?.value || "",
+        upiId: upiIdSetting?.value || "",
+      });
+    } catch (error) {
+      console.error("Error fetching deposit info:", error);
+      res.status(500).json({ message: "Failed to fetch deposit info" });
+    }
+  });
+
   // Protected routes
   app.get('/api/user/investments', isAuthenticated, async (req: any, res) => {
     try {
@@ -249,6 +263,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/settings', isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
   // Admin routes
   app.get('/api/admin/users', isAdmin, async (req, res) => {
     try {
@@ -311,6 +335,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/announcements', isAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ message: "Failed to fetch announcements" });
+    }
+  });
+
   app.post('/api/admin/approve-deposit/:id', isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -365,6 +399,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating announcement:", error);
       res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.delete('/api/admin/announcements/:id', isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAnnouncement(id);
+      res.json({ message: "Announcement deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      res.status(500).json({ message: "Failed to delete announcement" });
     }
   });
 

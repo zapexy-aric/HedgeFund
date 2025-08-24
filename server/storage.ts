@@ -52,7 +52,9 @@ export interface IStorage {
 
   // Announcements operations
   getActiveAnnouncements(): Promise<Announcement[]>;
+  getAllAnnouncements(): Promise<Announcement[]>;
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  deleteAnnouncement(id: string): Promise<void>;
 
   // Investment plans operations
   getActivePlans(): Promise<InvestmentPlan[]>;
@@ -88,6 +90,7 @@ export interface IStorage {
   // Admin operations
   getAllTransactions(): Promise<Transaction[]>;
   getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  getAllSettings(): Promise<AdminSetting[]>;
   approveWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
   rejectWithdrawalRequest(id: string): Promise<WithdrawalRequest>;
   approveDeposit(transactionId: string, amount: string): Promise<Transaction>;
@@ -185,9 +188,20 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(announcements.createdAt));
   }
 
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db
+      .select()
+      .from(announcements)
+      .orderBy(desc(announcements.createdAt));
+  }
+
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
     const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
     return newAnnouncement;
+  }
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await db.delete(announcements).where(eq(announcements.id, id));
   }
 
   // Investment plans operations
@@ -397,6 +411,10 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(withdrawalRequests)
       .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  async getAllSettings(): Promise<AdminSetting[]> {
+    return await db.select().from(adminSettings);
   }
 
   async approveWithdrawalRequest(id: string): Promise<WithdrawalRequest> {

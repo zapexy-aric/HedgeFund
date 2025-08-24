@@ -121,6 +121,7 @@ export function setupAuth(app: Express) {
           depositBalance: user.depositBalance,
           withdrawalBalance: user.withdrawalBalance,
           referralCode: user.referralCode,
+          isAdmin: user.isAdmin,
         });
       });
     } catch (error) {
@@ -145,6 +146,7 @@ export function setupAuth(app: Express) {
           depositBalance: user.depositBalance,
           withdrawalBalance: user.withdrawalBalance,
           referralCode: user.referralCode,
+          isAdmin: user.isAdmin,
         });
       });
     })(req, res, next);
@@ -170,6 +172,7 @@ export function setupAuth(app: Express) {
       depositBalance: user.depositBalance,
       withdrawalBalance: user.withdrawalBalance,
       referralCode: user.referralCode,
+      isAdmin: user.isAdmin,
     });
   });
 }
