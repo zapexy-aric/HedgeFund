@@ -30,7 +30,8 @@ import {
   Edit,
   Trash2,
   MessageSquare,
-  Building
+  Building,
+  DollarSign,
 } from "lucide-react";
 
 interface AdminUser {
@@ -112,6 +113,12 @@ export default function AdminDashboard() {
     deposit_qr_code_url: "",
     deposit_upi_id: "",
     telegram_support_url: "",
+  });
+  const [adjustmentData, setAdjustmentData] = useState({
+    userWhatsappNumber: "",
+    amount: "",
+    type: "admin_credit",
+    remarks: "",
   });
 
   // Check if user is admin
@@ -304,6 +311,21 @@ export default function AdminDashboard() {
     },
   });
 
+  const adjustBalanceMutation = useMutation({
+    mutationFn: async (data: typeof adjustmentData) => {
+      await apiRequest("POST", "/api/admin/adjust-balance", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transactions"] });
+      setAdjustmentData({ userWhatsappNumber: "", amount: "", type: "admin_credit", remarks: "" });
+      toast({ title: "Success", description: "Balance adjusted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to adjust balance", variant: "destructive" });
+    },
+  });
+
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -396,6 +418,7 @@ export default function AdminDashboard() {
     { id: "announcements", label: "Announcements", icon: MessageSquare },
     { id: "partners", label: "Partners", icon: Building },
     { id: "settings", label: "Settings", icon: Settings },
+    { id: "balance", label: "Adjust Balance", icon: DollarSign },
   ];
 
   if (authLoading) {
@@ -986,6 +1009,66 @@ export default function AdminDashboard() {
                     disabled={updateSettingsMutation.isPending}
                   >
                     {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Balance Adjustment Tab */}
+          {activeTab === "balance" && (
+            <div data-testid="section-admin-balance">
+              <h1 className="text-3xl font-bold text-gray-800 mb-6">Adjust User Balance</h1>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manual Balance Adjustment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="adj-whatsapp">User WhatsApp Number</Label>
+                    <Input
+                      id="adj-whatsapp"
+                      value={adjustmentData.userWhatsappNumber}
+                      onChange={(e) => setAdjustmentData(prev => ({ ...prev, userWhatsappNumber: e.target.value }))}
+                      placeholder="Enter user's WhatsApp number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="adj-amount">Amount</Label>
+                    <Input
+                      id="adj-amount"
+                      type="number"
+                      value={adjustmentData.amount}
+                      onChange={(e) => setAdjustmentData(prev => ({ ...prev, amount: e.target.value }))}
+                      placeholder="Enter amount"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="adj-type">Adjustment Type</Label>
+                    <select
+                      id="adj-type"
+                      value={adjustmentData.type}
+                      onChange={(e) => setAdjustmentData(prev => ({ ...prev, type: e.target.value }))}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="admin_credit">Credit (Add)</option>
+                      <option value="admin_debit">Debit (Subtract)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="adj-remarks">Remarks</Label>
+                    <Textarea
+                      id="adj-remarks"
+                      value={adjustmentData.remarks}
+                      onChange={(e) => setAdjustmentData(prev => ({ ...prev, remarks: e.target.value }))}
+                      placeholder="Enter reason for adjustment"
+                    />
+                  </div>
+                  <Button
+                    onClick={() => adjustBalanceMutation.mutate(adjustmentData)}
+                    disabled={adjustBalanceMutation.isPending}
+                  >
+                    {adjustBalanceMutation.isPending ? "Adjusting..." : "Adjust Balance"}
                   </Button>
                 </CardContent>
               </Card>

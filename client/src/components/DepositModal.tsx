@@ -91,7 +91,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" data-testid="modal-deposit">
+      <DialogContent className="w-11/12 sm:max-w-md" data-testid="modal-deposit">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">Deposit Funds</DialogTitle>
           <p className="text-center text-gray-600">Follow the steps below to add funds</p>

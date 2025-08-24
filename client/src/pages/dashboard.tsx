@@ -234,8 +234,8 @@ export default function Dashboard() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm flex flex-col">
-          <div className="p-4 space-y-4 flex-grow">
+        <nav className="w-16 bg-white shadow-sm flex flex-col">
+          <div className="p-2 space-y-2 flex-grow">
             {navItems.map((item) => (
               <Button
                 key={item.id}
