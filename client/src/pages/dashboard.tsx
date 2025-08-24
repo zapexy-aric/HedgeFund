@@ -173,6 +173,11 @@ export default function Dashboard() {
     return plans.find(p => p.id === planId);
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/logout', { method: 'POST' });
+    window.location.reload();
+  };
+
   const navItems = [
     { id: "home", icon: Home, label: "Home" },
     { id: "plans", icon: PieChart, label: "Plans" },
@@ -180,6 +185,7 @@ export default function Dashboard() {
     { id: "referrals", icon: Users, label: "Referrals" },
     { id: "claim", icon: Gift, label: "Claim Rewards" },
     { id: "profile", icon: User, label: "Profile" },
+    { id: "logout", icon: LogOut, label: "Logout", onClick: handleLogout },
   ];
 
   if (authLoading) {
@@ -198,9 +204,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col">
       {/* Dashboard Header */}
-      <header className="bg-white shadow-sm px-6 py-4">
+      <header className="bg-white shadow-sm px-6 py-4 z-10">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
@@ -226,41 +232,27 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
-        <nav className="w-20 bg-white shadow-sm h-screen sticky top-0 flex flex-col justify-between">
-          <div className="p-4 space-y-4">
+        <nav className="w-20 bg-white shadow-sm flex flex-col">
+          <div className="p-4 space-y-4 flex-grow">
             {navItems.map((item) => (
               <Button
                 key={item.id}
                 variant={activeSection === item.id ? "default" : "ghost"}
                 size="icon"
                 className="w-12 h-12"
-                onClick={() => setActiveSection(item.id)}
+                onClick={item.onClick ? item.onClick : () => setActiveSection(item.id)}
                 data-testid={`button-nav-${item.id}`}
               >
                 <item.icon className="h-5 w-5" />
               </Button>
             ))}
           </div>
-          <div className="p-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-12 h-12"
-              onClick={async () => {
-                await fetch('/api/logout', { method: 'POST' });
-                window.location.reload();
-              }}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-y-auto">
           {/* Home Section */}
           {activeSection === "home" && (
             <div data-testid="section-home">
@@ -428,7 +420,7 @@ export default function Dashboard() {
                           </Badge>
                         </div>
                         
-                        <div className="grid md:grid-cols-5 gap-4 mb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
                           <div className="text-center p-4 bg-background rounded-lg">
                             <p className="text-gray-500 text-sm">Investment Amount</p>
                             <p className="text-xl font-bold text-gray-800">{formatCurrency(investment.amount)}</p>
@@ -487,7 +479,7 @@ export default function Dashboard() {
               </div>
               
               {/* Balance Cards */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card className="bg-gradient-to-r from-primary to-blue-600 text-white">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -516,7 +508,7 @@ export default function Dashboard() {
               </div>
               
               {/* Action Buttons */}
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <Button 
                   className="flex items-center justify-center space-x-3 py-4 bg-primary hover:bg-blue-700"
                   onClick={() => setShowDepositModal(true)}
