@@ -32,7 +32,6 @@ export interface IStorage {
   getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalances(userId: string, depositBalance?: string, withdrawalBalance?: string): Promise<User>;
-  updateUserReferralCode(userId: string, referralCode: string): Promise<User>;
 
   // Partners operations
   getActivePartners(): Promise<Partner[]>;
@@ -84,15 +83,6 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByWhatsApp(whatsappNumber: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.whatsappNumber, whatsappNumber));
-    return user;
-  }
-
-  async updateUserReferralCode(userId: string, referralCode: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ referralCode })
-      .where(eq(users.id, userId))
-      .returning();
     return user;
   }
 

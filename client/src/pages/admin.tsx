@@ -11,18 +11,6 @@ interface AuthUser {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -38,11 +26,10 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  Menu,
-  MessageSquare,
-  Building,
+  Edit,
   Trash2,
-  Edit
+  MessageSquare,
+  Building
 } from "lucide-react";
 
 interface AdminUser {
@@ -76,7 +63,16 @@ interface WithdrawalRequest {
   createdAt: string;
 }
 
-import type { InvestmentPlan, Announcement, Partner } from "@shared/schema";
+interface InvestmentPlan {
+  id: string;
+  name: string;
+  dailyPercentage: string;
+  minInvestment: string;
+  maxInvestment: string;
+  durationDays: number;
+  isActive: boolean;
+  isPopular: boolean;
+}
 
 export default function AdminDashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -84,9 +80,6 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [newPlan, setNewPlan] = useState({
     name: "",
     dailyPercentage: "",
@@ -103,10 +96,6 @@ export default function AdminDashboard() {
   const [newPartner, setNewPartner] = useState({
     name: "",
     logoUrl: ""
-  });
-  const [siteSettings, setSiteSettings] = useState({
-    deposit_upi_id: "",
-    telegram_support_url: "",
   });
 
   // Check if user is admin
@@ -139,32 +128,6 @@ export default function AdminDashboard() {
   const { data: plans = [] } = useQuery<InvestmentPlan[]>({
     queryKey: ["/api/plans"],
     enabled: isAuthenticated && user?.isAdmin,
-  });
-
-  useQuery({
-    queryKey: ["/api/deposit-upi"],
-    enabled: isAuthenticated && user?.isAdmin,
-    onSuccess: (data: any) => {
-      setSiteSettings(prev => ({ ...prev, deposit_upi_id: data.upiId }));
-    }
-  });
-
-  useQuery({
-    queryKey: ["/api/admin/telegram-support"],
-    enabled: isAuthenticated && user?.isAdmin,
-    onSuccess: (data: any) => {
-      setSiteSettings(prev => ({ ...prev, telegram_support_url: data.telegramUrl }));
-    }
-  });
-
-  const { data: allAnnouncements = [] } = useQuery<Announcement[]>({
-    queryKey: ["/api/admin/announcements"],
-    enabled: isAuthenticated && user?.isAdmin && activeTab === "announcements",
-  });
-
-  const { data: allPartners = [] } = useQuery<Partner[]>({
-    queryKey: ["/api/admin/partners"],
-    enabled: isAuthenticated && user?.isAdmin && activeTab === "partners",
   });
 
   const approveWithdrawalMutation = useMutation({
@@ -249,113 +212,10 @@ export default function AdminDashboard() {
     },
   });
 
-  const deletePlanMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/delete-plan/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
-      toast({ title: "Success", description: "Investment plan deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete investment plan", variant: "destructive" });
-    },
-  });
-
-  const updatePlanMutation = useMutation({
-    mutationFn: async (plan: InvestmentPlan) => {
-      await apiRequest("PUT", `/api/admin/update-plan/${plan.id}`, plan);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/plans"] });
-      toast({ title: "Success", description: "Investment plan updated successfully" });
-      setEditingPlan(null);
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update investment plan", variant: "destructive" });
-    },
-  });
-
-  const updateAnnouncementMutation = useMutation({
-    mutationFn: async (announcement: Announcement) => {
-      await apiRequest("PUT", `/api/admin/announcements/${announcement.id}`, announcement);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
-      toast({ title: "Success", description: "Announcement updated successfully" });
-      setEditingAnnouncement(null);
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update announcement", variant: "destructive" });
-    },
-  });
-
-  const deleteAnnouncementMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/announcements/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
-      toast({ title: "Success", description: "Announcement deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete announcement", variant: "destructive" });
-    },
-  });
-
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (settings: { key: string; value: string }) => {
-      await apiRequest("PUT", `/api/admin/settings/${settings.key}`, { value: settings.value });
-    },
-    onSuccess: (data, variables) => {
-      if (variables.key === 'deposit_upi_id') {
-        queryClient.invalidateQueries({ queryKey: ["/api/deposit-upi"] });
-      }
-      if (variables.key === 'telegram_support_url') {
-        queryClient.invalidateQueries({ queryKey: ["/api/admin/telegram-support"] });
-      }
-      toast({ title: "Success", description: "Settings updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update settings", variant: "destructive" });
-    },
-  });
-
-  const deletePartnerMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/partners/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/partners"] });
-      toast({ title: "Success", description: "Partner deleted successfully" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete partner", variant: "destructive" });
-    },
-  });
-
-  const handleDeletePlan = (planId: string) => {
-    if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
-      deletePlanMutation.mutate(planId);
-    }
-  };
-
-  const handleDeleteAnnouncement = (announcementId: string) => {
-    if (window.confirm("Are you sure you want to delete this announcement?")) {
-      deleteAnnouncementMutation.mutate(announcementId);
-    }
-  };
-
-  const handleDeletePartner = (partnerId: string) => {
-    if (window.confirm("Are you sure you want to delete this partner?")) {
-      deletePartnerMutation.mutate(partnerId);
-    }
-  };
-
   const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
     }).format(parseFloat(amount));
   };
 
@@ -407,35 +267,14 @@ export default function AdminDashboard() {
   const pendingWithdrawals = withdrawalRequests.filter(w => w.status === 'pending');
 
   const tabs = [
-    { id: "overview", label: "Overview", icon: Users },
+    { id: "overview", label: "Overview", icon: Settings },
     { id: "users", label: "Users", icon: Users },
     { id: "deposits", label: "Deposits", icon: CreditCard },
     { id: "withdrawals", label: "Withdrawals", icon: Banknote },
     { id: "plans", label: "Plans", icon: PlusCircle },
     { id: "announcements", label: "Announcements", icon: MessageSquare },
     { id: "partners", label: "Partners", icon: Building },
-    { id: "settings", label: "Settings", icon: Settings },
   ];
-
-  const renderSidebarContent = () => (
-    <div className="p-4 space-y-2">
-      {tabs.map((tab) => (
-        <Button
-          key={tab.id}
-          variant={activeTab === tab.id ? "default" : "ghost"}
-          className="w-full justify-start"
-          onClick={() => {
-            setActiveTab(tab.id);
-            setSidebarOpen(false);
-          }}
-          data-testid={`button-admin-tab-${tab.id}`}
-        >
-          <tab.icon className="h-4 w-4 mr-2" />
-          {tab.label}
-        </Button>
-      ))}
-    </div>
-  );
 
   if (authLoading) {
     return (
@@ -455,18 +294,12 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="bg-white shadow-sm px-6 py-4 sticky top-0 z-30">
+      <header className="bg-white shadow-sm px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(!isSidebarOpen)}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-            <img src="https://i.ibb.co/H8mXMmJ/Adobe-Express-file.png" alt="HedgeFund Logo" className="h-10 w-10" />
+            <div className="bg-primary text-white w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl">
+              H
+            </div>
             <div>
               <span className="text-2xl font-bold text-gray-800">HedgeFund Admin</span>
               <p className="text-sm text-gray-500">Administrative Dashboard</p>
@@ -492,19 +325,26 @@ export default function AdminDashboard() {
       </header>
 
       <div className="flex">
-        {/* Mobile Sidebar */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/60 z-20 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-        <nav className={`fixed top-0 left-0 w-64 bg-white shadow-lg h-full z-30 transform transition-transform duration-300 ease-in-out lg:sticky lg:transform-none lg:top-[72px] lg:h-[calc(100vh-72px)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          {renderSidebarContent()}
+        {/* Admin Sidebar */}
+        <nav className="w-64 bg-white shadow-sm h-screen sticky top-0">
+          <div className="p-4 space-y-2">
+            {tabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setActiveTab(tab.id)}
+                data-testid={`button-admin-tab-${tab.id}`}
+              >
+                <tab.icon className="h-4 w-4 mr-2" />
+                {tab.label}
+              </Button>
+            ))}
+          </div>
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:ml-64">
+        <main className="flex-1 p-6">
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div data-testid="section-admin-overview">
@@ -616,7 +456,6 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(deposit.amount)}</h3>
-                          <p className="text-sm text-gray-500">User: {users.find(u => u.id === deposit.userId)?.whatsappNumber || 'N/A'}</p>
                           <p className="text-sm text-gray-500">UTR: {deposit.utrNumber}</p>
                           <p className="text-xs text-gray-400">{formatDate(deposit.createdAt)}</p>
                         </div>
@@ -662,7 +501,6 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(withdrawal.amount)}</h3>
-                          <p className="text-sm text-gray-500">User: {users.find(u => u.id === withdrawal.userId)?.whatsappNumber || 'N/A'}</p>
                           <p className="text-sm text-gray-500">Name: {withdrawal.fullName}</p>
                           <p className="text-sm text-gray-500">UPI: {withdrawal.upiId}</p>
                           <p className="text-xs text-gray-400">{formatDate(withdrawal.createdAt)}</p>
@@ -722,7 +560,7 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="plan-percentage">Daily Profit (%)</Label>
+                      <Label htmlFor="plan-percentage">Daily Percentage (%)</Label>
                       <Input
                         id="plan-percentage"
                         type="number"
@@ -794,381 +632,126 @@ export default function AdminDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {plans.map((plan) => (
-                          <div
-                            key={plan.id}
-                            className="p-3 border rounded-lg"
-                            data-testid={`card-admin-plan-${plan.id}`}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h4 className="font-semibold">{plan.name}</h4>
-                                <p className="text-sm text-gray-500">{plan.dailyPercentage}% daily</p>
-                                <p className="text-xs text-gray-400">
-                                  {formatCurrency(plan.minInvestment)} - {formatCurrency(plan.maxInvestment)}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                {plan.isPopular && <Badge variant="secondary">Popular</Badge>}
-                                <Badge variant={plan.isActive ? "default" : "outline"}>
-                                  {plan.isActive ? "Active" : "Inactive"}
-                                </Badge>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => setEditingPlan(plan)}
-                                  data-testid={`button-edit-plan-${plan.id}`}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="icon"
-                                  onClick={() => handleDeletePlan(plan.id)}
-                                  disabled={deletePlanMutation.isPending}
-                                  data-testid={`button-delete-plan-${plan.id}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                        <div
+                          key={plan.id}
+                          className="p-3 border rounded-lg"
+                          data-testid={`card-admin-plan-${plan.id}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold">{plan.name}</h4>
+                              <p className="text-sm text-gray-500">{plan.dailyPercentage}% daily</p>
+                              <p className="text-xs text-gray-400">
+                                {formatCurrency(plan.minInvestment)} - {formatCurrency(plan.maxInvestment)}
+                              </p>
+                            </div>
+                            <div className="flex space-x-1">
+                              {plan.isPopular && <Badge variant="secondary">Popular</Badge>}
+                              <Badge variant={plan.isActive ? "default" : "outline"}>
+                                {plan.isActive ? "Active" : "Inactive"}
+                              </Badge>
                             </div>
                           </div>
-                        ))}
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
-          )}
-
-          {/* Edit Plan Modal */}
-          {editingPlan && (
-            <Dialog open={!!editingPlan} onOpenChange={() => setEditingPlan(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit Investment Plan</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                   <div>
-                      <Label htmlFor="edit-plan-name">Plan Name</Label>
-                      <Input
-                        id="edit-plan-name"
-                        value={editingPlan.name}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, name: e.target.value } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-plan-percentage">Daily Profit (%)</Label>
-                      <Input
-                        id="edit-plan-percentage"
-                        type="number"
-                        step="0.01"
-                        value={editingPlan.dailyPercentage}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, dailyPercentage: e.target.value } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-plan-min">Min Investment</Label>
-                      <Input
-                        id="edit-plan-min"
-                        type="number"
-                        value={editingPlan.minInvestment}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, minInvestment: e.target.value } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-plan-max">Max Investment</Label>
-                      <Input
-                        id="edit-plan-max"
-                        type="number"
-                        value={editingPlan.maxInvestment}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, maxInvestment: e.target.value } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-plan-duration">Duration (Days)</Label>
-                      <Input
-                        id="edit-plan-duration"
-                        type="number"
-                        value={editingPlan.durationDays}
-                        onChange={(e) => setEditingPlan(p => p ? { ...p, durationDays: parseInt(e.target.value) } : null)}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                       <input
-                          type="checkbox"
-                          id="edit-plan-active"
-                          checked={editingPlan.isActive}
-                          onChange={(e) => setEditingPlan(p => p ? { ...p, isActive: e.target.checked } : null)}
-                        />
-                        <Label htmlFor="edit-plan-active">Active</Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                       <input
-                          type="checkbox"
-                          id="edit-plan-popular"
-                          checked={editingPlan.isPopular}
-                          onChange={(e) => setEditingPlan(p => p ? { ...p, isPopular: e.target.checked } : null)}
-                        />
-                        <Label htmlFor="edit-plan-popular">Popular</Label>
-                    </div>
-                </div>
-                <Button
-                  onClick={() => updatePlanMutation.mutate(editingPlan)}
-                  disabled={updatePlanMutation.isPending}
-                  className="w-full"
-                >
-                  {updatePlanMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogContent>
-            </Dialog>
           )}
 
           {/* Announcements Tab */}
           {activeTab === "announcements" && (
             <div data-testid="section-admin-announcements">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Announcements</h1>
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Create New Announcement</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="announcement-title">Title</Label>
-                      <Input
-                        id="announcement-title"
-                        value={newAnnouncement.title}
-                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Enter announcement title"
-                        data-testid="input-announcement-title"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="announcement-content">Content</Label>
-                      <Textarea
-                        id="announcement-content"
-                        value={newAnnouncement.content}
-                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
-                        placeholder="Enter announcement content"
-                        rows={4}
-                        data-testid="textarea-announcement-content"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="announcement-image">Image URL (Optional)</Label>
-                      <Input
-                        id="announcement-image"
-                        value={newAnnouncement.imageUrl}
-                        onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
-                        placeholder="https://example.com/image.jpg"
-                        data-testid="input-announcement-image"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreateAnnouncement}
-                      disabled={createAnnouncementMutation.isPending}
-                      className="w-full"
-                      data-testid="button-create-announcement"
-                    >
-                      {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
-                    </Button>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Announcements</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {allAnnouncements.map((ann) => (
-                      <div key={ann.id} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-semibold">{ann.title}</h4>
-                            <p className="text-sm text-gray-500 truncate">{ann.content}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                             <Badge variant={ann.isActive ? "default" : "outline"}>
-                                {ann.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            <Button variant="outline" size="icon" onClick={() => setEditingAnnouncement(ann)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="destructive" size="icon" onClick={() => handleDeleteAnnouncement(ann.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
 
-          {/* Edit Announcement Modal */}
-          {editingAnnouncement && (
-             <Dialog open={!!editingAnnouncement} onOpenChange={() => setEditingAnnouncement(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit Announcement</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                   <div>
-                      <Label htmlFor="edit-ann-title">Title</Label>
-                      <Input
-                        id="edit-ann-title"
-                        value={editingAnnouncement.title}
-                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, title: e.target.value } : null)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-ann-content">Content</Label>
-                      <Textarea
-                        id="edit-ann-content"
-                        value={editingAnnouncement.content}
-                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, content: e.target.value } : null)}
-                      />
-                    </div>
-                     <div>
-                      <Label htmlFor="edit-ann-image">Image URL</Label>
-                      <Input
-                        id="edit-ann-image"
-                        value={editingAnnouncement.imageUrl}
-                        onChange={(e) => setEditingAnnouncement(a => a ? { ...a, imageUrl: e.target.value } : null)}
-                      />
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="ann-active"
-                          checked={editingAnnouncement.isActive}
-                          onChange={(e) => setEditingAnnouncement(a => a ? { ...a, isActive: e.target.checked } : null)}
-                        />
-                        <Label htmlFor="ann-active">Active</Label>
-                    </div>
-                </div>
-                <Button
-                  onClick={() => updateAnnouncementMutation.mutate(editingAnnouncement)}
-                  disabled={updateAnnouncementMutation.isPending}
-                  className="w-full"
-                >
-                  {updateAnnouncementMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogContent>
-            </Dialog>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create New Announcement</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="announcement-title">Title</Label>
+                    <Input
+                      id="announcement-title"
+                      value={newAnnouncement.title}
+                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Enter announcement title"
+                      data-testid="input-announcement-title"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="announcement-content">Content</Label>
+                    <Textarea
+                      id="announcement-content"
+                      value={newAnnouncement.content}
+                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, content: e.target.value }))}
+                      placeholder="Enter announcement content"
+                      rows={4}
+                      data-testid="textarea-announcement-content"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="announcement-image">Image URL (Optional)</Label>
+                    <Input
+                      id="announcement-image"
+                      value={newAnnouncement.imageUrl}
+                      onChange={(e) => setNewAnnouncement(prev => ({ ...prev, imageUrl: e.target.value }))}
+                      placeholder="https://example.com/image.jpg"
+                      data-testid="input-announcement-image"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleCreateAnnouncement}
+                    disabled={createAnnouncementMutation.isPending}
+                    className="w-full"
+                    data-testid="button-create-announcement"
+                  >
+                    {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {/* Partners Tab */}
           {activeTab === "partners" && (
             <div data-testid="section-admin-partners">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Partners</h1>
-              <div className="grid lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Add New Partner</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="partner-name">Partner Name</Label>
-                      <Input
-                        id="partner-name"
-                        value={newPartner.name}
-                        onChange={(e) => setNewPartner(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Enter partner name"
-                        data-testid="input-partner-name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="partner-logo">Logo URL</Label>
-                      <Input
-                        id="partner-logo"
-                        value={newPartner.logoUrl}
-                        onChange={(e) => setNewPartner(prev => ({ ...prev, logoUrl: e.target.value }))}
-                        placeholder="https://example.com/logo.png"
-                        data-testid="input-partner-logo"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreatePartner}
-                      disabled={createPartnerMutation.isPending}
-                      className="w-full"
-                      data-testid="button-create-partner"
-                    >
-                      {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
-                    </Button>
-                  </CardContent>
-                </Card>
-                 <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Partners</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {allPartners.map((partner) => (
-                      <div key={partner.id} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-3">
-                            <img src={partner.logoUrl} alt={partner.name} className="h-10 w-20 object-contain"/>
-                            <h4 className="font-semibold">{partner.name}</h4>
-                          </div>
-                          <Button variant="destructive" size="icon" onClick={() => handleDeletePartner(partner.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
 
-          {/* Settings Tab */}
-          {activeTab === "settings" && (
-            <div data-testid="section-admin-settings" className="space-y-6">
-              <h1 className="text-3xl font-bold text-gray-800">Site Settings</h1>
               <Card>
                 <CardHeader>
-                  <CardTitle>Deposit Information</CardTitle>
+                  <CardTitle>Add New Partner</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="setting-upi-id">Deposit UPI ID</Label>
+                    <Label htmlFor="partner-name">Partner Name</Label>
                     <Input
-                      id="setting-upi-id"
-                      value={siteSettings.deposit_upi_id}
-                      onChange={(e) => setSiteSettings(prev => ({ ...prev, deposit_upi_id: e.target.value }))}
-                      placeholder="Enter UPI ID for deposits"
+                      id="partner-name"
+                      value={newPartner.name}
+                      onChange={(e) => setNewPartner(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter partner name"
+                      data-testid="input-partner-name"
                     />
                   </div>
-                   <Button
-                    onClick={() => updateSettingsMutation.mutate({ key: 'deposit_upi_id', value: siteSettings.deposit_upi_id })}
-                    disabled={updateSettingsMutation.isPending}
-                  >
-                    {updateSettingsMutation.isPending ? "Saving..." : "Save UPI ID"}
-                  </Button>
-                </CardContent>
-              </Card>
-
-               <Card>
-                <CardHeader>
-                  <CardTitle>Support Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="setting-support-url">Customer Support Link</Label>
+                    <Label htmlFor="partner-logo">Logo URL</Label>
                     <Input
-                      id="setting-support-url"
-                      value={siteSettings.telegram_support_url}
-                      onChange={(e) => setSiteSettings(prev => ({ ...prev, telegram_support_url: e.target.value }))}
-                      placeholder="Enter full URL for support chat"
+                      id="partner-logo"
+                      value={newPartner.logoUrl}
+                      onChange={(e) => setNewPartner(prev => ({ ...prev, logoUrl: e.target.value }))}
+                      placeholder="https://example.com/logo.png"
+                      data-testid="input-partner-logo"
                     />
                   </div>
-                   <Button
-                    onClick={() => updateSettingsMutation.mutate({ key: 'telegram_support_url', value: siteSettings.telegram_support_url })}
-                    disabled={updateSettingsMutation.isPending}
+                  <Button
+                    onClick={handleCreatePartner}
+                    disabled={createPartnerMutation.isPending}
+                    className="w-full"
+                    data-testid="button-create-partner"
                   >
-                    {updateSettingsMutation.isPending ? "Saving..." : "Save Support Link"}
+                    {createPartnerMutation.isPending ? "Adding..." : "Add Partner"}
                   </Button>
                 </CardContent>
               </Card>
