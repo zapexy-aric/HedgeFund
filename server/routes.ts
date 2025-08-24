@@ -188,6 +188,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const withdrawalData = withdrawalInputSchema.parse(req.body);
 
+      // Check if user has sufficient balance
+      const user = await storage.getUser(userId);
+      if (!user || parseFloat(user.withdrawalBalance) < parseFloat(withdrawalData.amount)) {
+        return res.status(400).json({ message: "Insufficient withdrawal balance." });
+      }
+
+      // Deduct amount from balance immediately
+      const newBalance = (parseFloat(user.withdrawalBalance) - parseFloat(withdrawalData.amount)).toFixed(2);
+      await storage.updateUserBalances(userId, undefined, newBalance);
+
+      // Create the withdrawal request
       const request = await storage.createWithdrawalRequest({
         ...withdrawalData,
         userId,
