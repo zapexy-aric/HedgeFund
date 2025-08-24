@@ -64,24 +64,7 @@ interface WithdrawalRequest {
   createdAt: string;
 }
 
-interface InvestmentPlan {
-  id: string;
-  name: string;
-  dailyPercentage: string;
-  minInvestment: string;
-  maxInvestment: string;
-  durationDays: number;
-  isActive: boolean;
-  isPopular: boolean;
-}
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  imageUrl?: string;
-  isActive: boolean;
-}
+import type { InvestmentPlan, Announcement } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -843,6 +826,32 @@ export default function AdminDashboard() {
                         value={editingPlan.durationDays}
                         onChange={(e) => setEditingPlan(p => p ? { ...p, durationDays: parseInt(e.target.value) } : null)}
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-plan-image-url">Image URL</Label>
+                      <Input
+                        id="edit-plan-image-url"
+                        value={editingPlan.imageUrl || ''}
+                        onChange={(e) => setEditingPlan(p => p ? { ...p, imageUrl: e.target.value } : null)}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                       <input
+                          type="checkbox"
+                          id="edit-plan-active"
+                          checked={editingPlan.isActive}
+                          onChange={(e) => setEditingPlan(p => p ? { ...p, isActive: e.target.checked } : null)}
+                        />
+                        <Label htmlFor="edit-plan-active">Active</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                       <input
+                          type="checkbox"
+                          id="edit-plan-popular"
+                          checked={editingPlan.isPopular}
+                          onChange={(e) => setEditingPlan(p => p ? { ...p, isPopular: e.target.checked } : null)}
+                        />
+                        <Label htmlFor="edit-plan-popular">Popular</Label>
                     </div>
                 </div>
                 <Button
