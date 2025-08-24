@@ -23,8 +23,12 @@ import {
   Calendar,
   ArrowUp,
   ArrowDown,
-  BarChart3
+  BarChart3,
+  Users,
+  Gift,
 } from "lucide-react";
+import ReferralsPage from "./referrals";
+import ClaimRewardsPage from "./claim-rewards";
 
 interface User {
   id: string;
@@ -165,6 +169,8 @@ export default function Dashboard() {
     { id: "home", icon: Home, label: "Home" },
     { id: "plans", icon: PieChart, label: "Plans" },
     { id: "purchased", icon: Briefcase, label: "Purchased Plans" },
+    { id: "referrals", icon: Users, label: "Referrals" },
+    { id: "claim", icon: Gift, label: "Claim Rewards" },
     { id: "profile", icon: User, label: "Profile" },
   ];
 
@@ -568,6 +574,12 @@ export default function Dashboard() {
               </Card>
             </div>
           )}
+
+          {/* Referrals Section */}
+          {activeSection === "referrals" && <ReferralsPage />}
+
+          {/* Claim Rewards Section */}
+          {activeSection === "claim" && <ClaimRewardsPage />}
         </main>
       </div>
 

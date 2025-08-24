@@ -120,6 +120,23 @@ export const withdrawalRequests = pgTable("withdrawal_requests", {
   processedAt: timestamp("processed_at"),
 });
 
+// Referral earnings table
+export const referralEarnings = pgTable("referral_earnings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referrerId: varchar("referrer_id")
+    .notNull()
+    .references(() => users.id),
+  referredUserId: varchar("referred_user_id")
+    .notNull()
+    .references(() => users.id),
+  userInvestmentId: varchar("user_investment_id")
+    .notNull()
+    .references(() => userInvestments.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status").default("unclaimed"), // unclaimed, claimed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -164,6 +181,13 @@ export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalReques
   processedAt: true,
 });
 
+export const insertReferralEarningSchema = createInsertSchema(
+  referralEarnings,
+).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
@@ -175,10 +199,16 @@ export type UserInvestment = typeof userInvestments.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type AdminSetting = typeof adminSettings.$inferSelect;
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
+export type ReferralEarning = typeof referralEarnings.$inferSelect;
 
 export type InsertPartner = z.infer<typeof insertPartnerSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type InsertInvestmentPlan = z.infer<typeof insertInvestmentPlanSchema>;
 export type InsertUserInvestment = z.infer<typeof insertUserInvestmentSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
-export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+export type InsertWithdrawalRequest = z.infer<
+  typeof insertWithdrawalRequestSchema
+>;
+export type InsertReferralEarning = z.infer<
+  typeof insertReferralEarningSchema
+>;
