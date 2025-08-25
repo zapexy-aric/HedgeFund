@@ -363,7 +363,9 @@ export default function Dashboard() {
                     )}
                     <CardHeader className="text-center">
                       <CardTitle className="text-xl">{plan.name}</CardTitle>
-                      <div className="text-3xl font-bold text-primary">{plan.dailyPercentage}%</div>
+                      <div className="text-3xl font-bold text-primary">
+                        {formatCurrency(((parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage)) / 100).toString())}
+                      </div>
                       <p className="text-sm text-gray-500">Daily Returns</p>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -372,8 +374,10 @@ export default function Dashboard() {
                         <span className="font-semibold">{formatCurrency(plan.minInvestment)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Maximum Investment</span>
-                        <span className="font-semibold">{formatCurrency(plan.maxInvestment)}</span>
+                        <span className="text-gray-600">Total Return</span>
+                        <span className="font-semibold">
+                          {formatCurrency((((parseFloat(plan.minInvestment) * parseFloat(plan.dailyPercentage)) / 100) * plan.durationDays).toString())}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Duration</span>

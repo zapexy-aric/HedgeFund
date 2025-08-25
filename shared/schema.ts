@@ -176,7 +176,9 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   createdAt: true,
 });
 
-export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests).omit({
+export const insertWithdrawalRequestSchema = createInsertSchema(
+  withdrawalRequests,
+).omit({
   id: true,
   createdAt: true,
   processedAt: true,
