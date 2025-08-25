@@ -301,9 +301,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUnclaimedPlanReturns(userId: string): Promise<UserInvestment[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     return await db
       .select()
       .from(userInvestments)
@@ -314,11 +311,11 @@ export class DatabaseStorage implements IStorage {
           or(
             and(
               isNull(userInvestments.lastClaimedAt),
-              lt(userInvestments.purchaseDate, today)
+              sql`DATE(${userInvestments.purchaseDate}) < CURRENT_DATE`
             ),
             and(
               isNotNull(userInvestments.lastClaimedAt),
-              lt(userInvestments.lastClaimedAt, today)
+              sql`DATE(${userInvestments.lastClaimedAt}) < CURRENT_DATE`
             )
           )
         )
