@@ -371,6 +371,17 @@ export class DatabaseStorage implements IStorage {
           .set({ lastClaimedAt: new Date() })
           .where(inArray(userInvestments.id, investmentIds));
       }
+
+      // Create a single transaction for the total claimed amount
+      if (totalClaimed > 0) {
+        await tx.insert(transactions).values({
+          userId: userId,
+          type: "investment_return",
+          amount: `+${totalClaimed.toFixed(2)}`,
+          status: "completed",
+          remarks: "Daily rewards claimed",
+        });
+      }
     });
 
     return { totalClaimed: totalClaimed.toFixed(2) };

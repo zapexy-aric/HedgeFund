@@ -109,6 +109,7 @@ export default function Dashboard() {
   const { data: user } = useQuery<User>({
     queryKey: ["/api/user"],
     enabled: isAuthenticated,
+    refetchInterval: 10000,
   });
 
   const { data: announcements = [] } = useQuery<Announcement[]>({
@@ -129,6 +130,7 @@ export default function Dashboard() {
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/user/transactions", { limit: 10 }],
     enabled: isAuthenticated,
+    refetchInterval: 10000,
   });
 
   const { data: telegramSupport } = useQuery<{ telegramUrl: string }>({
