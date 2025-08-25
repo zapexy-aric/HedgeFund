@@ -38,7 +38,8 @@ export function PurchasePlanModal({ isOpen, onClose, plan, availableBalance }: P
 
   const purchaseMutation = useMutation({
     mutationFn: async (data: { planId: string; amount: string }) => {
-      await apiRequest("POST", "/api/user/purchase-plan", data);
+      const response = await apiRequest("POST", "/api/user/purchase-plan", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/investments"] });
