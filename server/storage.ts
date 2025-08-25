@@ -27,7 +27,7 @@ import {
   referralEarnings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, inArray, sql, gte, lt } from "drizzle-orm";
+import { eq, desc, and, inArray, sql, gte, lt, or, isNull, isNotNull } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Helper function to generate a random referral code
@@ -311,8 +311,17 @@ export class DatabaseStorage implements IStorage {
         and(
           eq(userInvestments.userId, userId),
           eq(userInvestments.status, "active"),
-          lt(userInvestments.lastClaimedAt, today),
-        ),
+          or(
+            and(
+              isNull(userInvestments.lastClaimedAt),
+              lt(userInvestments.purchaseDate, today)
+            ),
+            and(
+              isNotNull(userInvestments.lastClaimedAt),
+              lt(userInvestments.lastClaimedAt, today)
+            )
+          )
+        )
       );
   }
 
