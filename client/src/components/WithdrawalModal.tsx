@@ -32,7 +32,6 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Withdrawal request successful:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/user/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
@@ -45,7 +44,6 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
       onClose();
     },
     onError: (error) => {
-      console.error("Withdrawal request failed:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to submit withdrawal request",
@@ -56,7 +54,6 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance }: Withdrawa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting withdrawal request with data:", { amount, upiId, fullName });
     
     if (!amount || parseFloat(amount) < 110) {
       toast({
