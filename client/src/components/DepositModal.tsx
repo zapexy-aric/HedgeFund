@@ -31,7 +31,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
 
   const depositMutation = useMutation({
     mutationFn: async (data: { amount: string; utrNumber: string }) => {
-      await apiRequest("POST", "/api/user/deposit", data);
+      const response = await apiRequest("POST", "/api/user/deposit", data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/transactions"] });

@@ -581,9 +581,8 @@ export default function Dashboard() {
                     ))}
                     
                     {transactions.length === 0 && (
-                      <div className="text-center py-8">
-                        <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No transactions yet</p>
+                      <div className="text-center py-4">
+                        <p className="text-gray-500 text-sm">No recent transactions</p>
                       </div>
                     )}
                   </div>
