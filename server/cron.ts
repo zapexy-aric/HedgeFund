@@ -39,9 +39,32 @@ async function calculateReferralEarnings() {
   }
 }
 
+async function updateInvestmentProgress() {
+  console.log("Updating investment progress...");
+
+  try {
+    const activeInvestments = await storage.getAllActiveInvestments();
+
+    for (const investment of activeInvestments) {
+      const currentDaysCompleted = investment.daysCompleted || 0;
+      const currentTotalReturn = investment.totalReturn || "0.00";
+      const dailyReturn = investment.dailyReturn || "0.00";
+
+      const newDaysCompleted = currentDaysCompleted + 1;
+      const newTotalReturn = (parseFloat(currentTotalReturn) + parseFloat(dailyReturn)).toFixed(2);
+      await storage.updateInvestmentProgress(investment.id, newDaysCompleted, newTotalReturn);
+    }
+
+    console.log("Investment progress update complete.");
+  } catch (error) {
+    console.error("Error updating investment progress:", error);
+  }
+}
+
 export function startCronJobs() {
   // Schedule to run every day at midnight
   cron.schedule("0 0 * * *", calculateReferralEarnings);
+  cron.schedule("0 1 * * *", updateInvestmentProgress); // Runs at 1 AM
 
   console.log("Cron jobs started.");
 }

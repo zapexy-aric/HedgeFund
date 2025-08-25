@@ -62,6 +62,7 @@ export interface IStorage {
   getPlanById(id: string): Promise<InvestmentPlan | undefined>;
 
   // User investments operations
+  getAllActiveInvestments(): Promise<UserInvestment[]>;
   getUserInvestments(userId: string): Promise<UserInvestment[]>;
   createUserInvestment(investment: InsertUserInvestment): Promise<UserInvestment>;
   updateInvestmentProgress(id: string, daysCompleted: number, totalReturn: string): Promise<UserInvestment>;
@@ -234,6 +235,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User investments operations
+  async getAllActiveInvestments(): Promise<UserInvestment[]> {
+    return await db
+      .select()
+      .from(userInvestments)
+      .where(eq(userInvestments.status, "active"));
+  }
+
   async getUserInvestments(userId: string): Promise<UserInvestment[]> {
     return await db
       .select()
@@ -251,6 +259,7 @@ export class DatabaseStorage implements IStorage {
     const updateData: any = {
       daysCompleted,
       totalReturn,
+      updatedAt: new Date(),
     };
 
     // If investment is completed, mark it as such

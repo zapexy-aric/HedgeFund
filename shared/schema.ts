@@ -85,6 +85,7 @@ export const userInvestments = pgTable("user_investments", {
   purchaseDate: timestamp("purchase_date").defaultNow(),
   completionDate: timestamp("completion_date"),
   lastClaimedAt: timestamp("last_claimed_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Transactions table
