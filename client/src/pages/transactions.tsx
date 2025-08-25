@@ -22,9 +22,8 @@ interface Transaction {
 export default function TransactionsPage() {
   const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/user/all-transactions"],
+    refetchInterval: 10000,
   });
-
-  console.log("TransactionsPage rendered, isLoading:", isLoading, "transactions:", transactions);
 
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("en-IN", {
