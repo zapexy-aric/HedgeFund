@@ -83,7 +83,7 @@ export interface IStorage {
   updateTransactionStatus(id: string, status: string): Promise<Transaction>;
 
   // Withdrawal requests operations
-  createWithdrawalRequest(request: InsertWithdrawalRequest): Promise<WithdrawalRequest>;
+  createWithdrawalRequest(request: Omit<InsertWithdrawalRequest, 'userId'>, userId: string): Promise<WithdrawalRequest>;
   getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]>;
 
   // Admin settings operations
@@ -421,8 +421,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Withdrawal requests operations
-  async createWithdrawalRequest(request: InsertWithdrawalRequest): Promise<WithdrawalRequest> {
-    const [newRequest] = await db.insert(withdrawalRequests).values(request).returning();
+  async createWithdrawalRequest(request: Omit<InsertWithdrawalRequest, 'userId'>, userId: string): Promise<WithdrawalRequest> {
+    const [newRequest] = await db.insert(withdrawalRequests).values({ ...request, userId }).returning();
     return newRequest;
   }
 
