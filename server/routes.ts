@@ -287,6 +287,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  app.get(
+    "/api/user/total-claimed",
+    isAuthenticated,
+    async (req: any, res) => {
+      try {
+        const userId = req.user.id;
+        const totalClaimed = await storage.getTotalClaimedReturns(userId);
+        res.json(totalClaimed);
+      } catch (error) {
+        console.error("Error fetching total claimed returns:", error);
+        res.status(500).json({ message: "Failed to fetch total claimed returns" });
+      }
+    },
+  );
+
   // Admin settings
   app.get('/api/admin/qr-code', async (req, res) => {
     try {

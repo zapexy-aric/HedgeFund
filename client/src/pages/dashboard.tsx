@@ -143,6 +143,12 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
+  const { data: totalClaimed = "0" } = useQuery<string>({
+    queryKey: ["/api/user/total-claimed"],
+    enabled: isAuthenticated,
+    refetchInterval: 10000,
+  });
+
   const handlePurchasePlan = (plan: InvestmentPlan) => {
     setSelectedPlan(plan);
     setShowPurchasePlanModal(true);
@@ -282,9 +288,9 @@ export default function Dashboard() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-blue-100 text-sm">Total Returns</p>
-                        <p className="text-2xl font-bold" data-testid="text-total-returns">
-                          {formatCurrency(investments.reduce((sum, inv) => sum + parseFloat(inv.totalReturn), 0).toString())}
+                        <p className="text-blue-100 text-sm">Total Claimed</p>
+                        <p className="text-2xl font-bold" data-testid="text-total-claimed">
+                          {formatCurrency(totalClaimed)}
                         </p>
                       </div>
                       <BarChart3 className="h-8 w-8 text-blue-100" />
