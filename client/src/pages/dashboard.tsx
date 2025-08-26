@@ -38,6 +38,7 @@ interface User {
   id: string;
   firstName?: string;
   lastName?: string;
+  whatsappNumber?: string;
   depositBalance: string;
   withdrawalBalance: string;
   isAdmin?: boolean;
@@ -492,6 +493,18 @@ export default function Dashboard() {
                 <p className="text-gray-600">Manage your account and financial transactions</p>
               </div>
               
+              <Card className="mb-8">
+                <CardContent className="p-6 flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-bold">
+                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">{user?.firstName} {user?.lastName}</h2>
+                    <p className="text-gray-500">{user?.whatsappNumber}</p>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Balance Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card className="bg-gradient-to-r from-primary to-blue-600 text-white">
