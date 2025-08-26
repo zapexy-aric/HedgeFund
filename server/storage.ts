@@ -80,6 +80,7 @@ export interface IStorage {
   getUserTransactions(userId: string): Promise<Transaction[]>;
   getAllUserTransactions(userId: string): Promise<Transaction[]>;
   getTotalWithdrawn(userId: string): Promise<string>;
+  getTotalClaimedReturns(userId: string): Promise<string>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: string, status: string): Promise<Transaction>;
 
@@ -92,8 +93,8 @@ export interface IStorage {
   setAdminSetting(key: string, value: string): Promise<AdminSetting>;
 
   // Admin operations
-  getAllTransactions(): Promise<Transaction[]>;
-  getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  getAllTransactions(): Promise<any[]>;
+  getAllWithdrawalRequests(): Promise<any[]>;
   adjustUserBalance(
     adminId: string,
     userWhatsappNumber: string,
@@ -432,6 +433,23 @@ export class DatabaseStorage implements IStorage {
     return Math.abs(result[0]?.total || 0).toFixed(2);
   }
 
+  async getTotalClaimedReturns(userId: string): Promise<string> {
+    const result = await db
+      .select({
+        total: sql`sum(amount)`.mapWith(Number),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, "investment_return"),
+          eq(transactions.status, "completed"),
+        ),
+      );
+
+    return (result[0]?.total || 0).toFixed(2);
+  }
+
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTransaction] = await db.insert(transactions).values(transaction).returning();
     return newTransaction;
@@ -448,8 +466,34 @@ export class DatabaseStorage implements IStorage {
 
   // Withdrawal requests operations
   async createWithdrawalRequest(request: Omit<InsertWithdrawalRequest, 'userId'>, userId: string): Promise<WithdrawalRequest> {
-    const [newRequest] = await db.insert(withdrawalRequests).values({ ...request, userId }).returning();
-    return newRequest;
+    return await db.transaction(async (tx) => {
+      const user = await tx.select().from(users).where(eq(users.id, userId)).then(rows => rows[0]);
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const withdrawalAmount = parseFloat(request.amount);
+      const currentBalance = parseFloat(user.withdrawalBalance || "0");
+
+      if (currentBalance < withdrawalAmount) {
+        throw new Error("Insufficient withdrawal balance");
+      }
+
+      const newBalance = currentBalance - withdrawalAmount;
+      await tx.update(users).set({ withdrawalBalance: newBalance.toFixed(2) }).where(eq(users.id, userId));
+
+      const [newRequest] = await tx.insert(withdrawalRequests).values({ ...request, userId }).returning();
+
+      await tx.insert(transactions).values({
+        userId: userId,
+        type: "withdrawal",
+        amount: `-${request.amount}`,
+        status: "pending",
+        withdrawalRequestId: newRequest.id,
+      });
+
+      return newRequest;
+    });
   }
 
   async getUserWithdrawalRequests(userId: string): Promise<WithdrawalRequest[]> {
@@ -479,17 +523,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin operations
-  async getAllTransactions(): Promise<Transaction[]> {
+  async getAllTransactions(): Promise<any[]> {
     return await db
       .select()
       .from(transactions)
+      .leftJoin(users, eq(transactions.userId, users.id))
       .orderBy(desc(transactions.createdAt));
   }
 
-  async getAllWithdrawalRequests(): Promise<WithdrawalRequest[]> {
+  async getAllWithdrawalRequests(): Promise<any[]> {
     return await db
       .select()
       .from(withdrawalRequests)
+      .leftJoin(users, eq(withdrawalRequests.userId, users.id))
       .orderBy(desc(withdrawalRequests.createdAt));
   }
 
@@ -498,21 +544,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveWithdrawalRequest(id: string): Promise<WithdrawalRequest> {
-    const [withdrawal] = await db
-      .update(withdrawalRequests)
-      .set({ status: "approved", processedAt: new Date() })
-      .where(eq(withdrawalRequests.id, id))
-      .returning();
-    return withdrawal;
+    return await db.transaction(async (tx) => {
+      const [withdrawal] = await tx
+        .update(withdrawalRequests)
+        .set({ status: "approved", processedAt: new Date() })
+        .where(eq(withdrawalRequests.id, id))
+        .returning();
+
+      if (withdrawal) {
+        await tx
+          .update(transactions)
+          .set({ status: "completed" })
+          .where(eq(transactions.withdrawalRequestId, id));
+      }
+
+      return withdrawal;
+    });
   }
 
   async rejectWithdrawalRequest(id: string): Promise<WithdrawalRequest> {
-    const [withdrawal] = await db
-      .update(withdrawalRequests)
-      .set({ status: "rejected", processedAt: new Date() })
-      .where(eq(withdrawalRequests.id, id))
-      .returning();
-    return withdrawal;
+    return await db.transaction(async (tx) => {
+      const [withdrawal] = await tx
+        .update(withdrawalRequests)
+        .set({ status: "rejected", processedAt: new Date() })
+        .where(eq(withdrawalRequests.id, id))
+        .returning();
+
+      if (withdrawal) {
+        // Reverse the transaction
+        await tx
+          .update(transactions)
+          .set({ status: "rejected" })
+          .where(eq(transactions.withdrawalRequestId, id));
+
+        // Credit the amount back to the user's withdrawal balance
+        const user = await tx.select().from(users).where(eq(users.id, withdrawal.userId)).then(rows => rows[0]);
+        if (user) {
+          const currentBalance = parseFloat(user.withdrawalBalance || "0");
+          const newBalance = (currentBalance + parseFloat(withdrawal.amount)).toFixed(2);
+          await tx.update(users).set({ withdrawalBalance: newBalance }).where(eq(users.id, user.id));
+
+          // Create a reversal transaction
+          await tx.insert(transactions).values({
+            userId: user.id,
+            type: "withdrawal_rejection",
+            amount: `+${withdrawal.amount}`,
+            status: "completed",
+            remarks: `Withdrawal request ${id} rejected`,
+          });
+        }
+      }
+
+      return withdrawal;
+    });
   }
 
   async approveDeposit(transactionId: string, amount: string): Promise<Transaction> {

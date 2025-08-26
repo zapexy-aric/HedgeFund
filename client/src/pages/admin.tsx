@@ -53,6 +53,7 @@ interface AdminTransaction {
   status: string;
   utrNumber?: string;
   createdAt: string;
+  user: { whatsappNumber: string };
 }
 
 interface WithdrawalRequest {
@@ -63,6 +64,7 @@ interface WithdrawalRequest {
   fullName: string;
   status: string;
   createdAt: string;
+  user: { whatsappNumber: string };
 }
 
 interface Announcement {
@@ -601,6 +603,7 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(deposit.amount)}</h3>
+                          <p className="text-sm text-gray-500">User: {deposit.user?.whatsappNumber}</p>
                           <p className="text-sm text-gray-500">UTR: {deposit.utrNumber}</p>
                           <p className="text-xs text-gray-400">{formatDate(deposit.createdAt)}</p>
                         </div>
@@ -646,6 +649,7 @@ export default function AdminDashboard() {
                       >
                         <div>
                           <h3 className="font-semibold">{formatCurrency(withdrawal.amount)}</h3>
+                          <p className="text-sm text-gray-500">User: {withdrawal.user?.whatsappNumber}</p>
                           <p className="text-sm text-gray-500">Name: {withdrawal.fullName}</p>
                           <p className="text-sm text-gray-500">UPI: {withdrawal.upiId}</p>
                           <p className="text-xs text-gray-400">{formatDate(withdrawal.createdAt)}</p>

@@ -99,6 +99,7 @@ export const transactions = pgTable("transactions", {
   upiId: varchar("upi_id"),
   fullName: varchar("full_name"),
   remarks: text("remarks"),
+  withdrawalRequestId: varchar("withdrawal_request_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
