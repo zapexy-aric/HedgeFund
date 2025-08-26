@@ -93,8 +93,8 @@ export interface IStorage {
   setAdminSetting(key: string, value: string): Promise<AdminSetting>;
 
   // Admin operations
-  getAllTransactions(): Promise<any[]>;
-  getAllWithdrawalRequests(): Promise<any[]>;
+  getAllTransactions(): Promise<{ transaction: Transaction; user: User | null }[]>;
+  getAllWithdrawalRequests(): Promise<{ withdrawalRequest: WithdrawalRequest; user: User | null }[]>;
   adjustUserBalance(
     adminId: string,
     userWhatsappNumber: string,
@@ -523,20 +523,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Admin operations
-  async getAllTransactions(): Promise<any[]> {
-    return await db
+  async getAllTransactions(): Promise<{ transaction: Transaction; user: User | null }[]> {
+    const result = await db
       .select()
       .from(transactions)
       .leftJoin(users, eq(transactions.userId, users.id))
       .orderBy(desc(transactions.createdAt));
+
+    return result.map(r => ({ transaction: r.transactions, user: r.users }));
   }
 
-  async getAllWithdrawalRequests(): Promise<any[]> {
-    return await db
+  async getAllWithdrawalRequests(): Promise<{ withdrawalRequest: WithdrawalRequest; user: User | null }[]> {
+    const result = await db
       .select()
       .from(withdrawalRequests)
       .leftJoin(users, eq(withdrawalRequests.userId, users.id))
       .orderBy(desc(withdrawalRequests.createdAt));
+
+    return result.map(r => ({ withdrawalRequest: r.withdrawal_requests, user: r.users }));
   }
 
   async getAllSettings(): Promise<AdminSetting[]> {
