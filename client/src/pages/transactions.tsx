@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Table,
   TableBody,
@@ -22,6 +23,7 @@ interface Transaction {
 export default function TransactionsPage() {
   const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/user/all-transactions"],
+    queryFn: () => apiRequest("GET", "/api/user/all-transactions").then(res => res.json()),
     refetchInterval: 10000,
   });
 

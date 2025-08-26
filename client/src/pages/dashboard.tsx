@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest } from "@/lib/queryClient";
 import { DepositModal } from "@/components/DepositModal";
 import { WithdrawalModal } from "@/components/WithdrawalModal";
 import { PurchasePlanModal } from "@/components/PurchasePlanModal";
@@ -128,7 +129,8 @@ export default function Dashboard() {
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
-    queryKey: ["/api/user/transactions", { limit: 10 }],
+    queryKey: ["/api/user/transactions"],
+    queryFn: () => apiRequest("GET", "/api/user/transactions").then(res => res.json()),
     enabled: isAuthenticated,
     refetchInterval: 10000,
   });

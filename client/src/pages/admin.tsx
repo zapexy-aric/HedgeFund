@@ -45,26 +45,30 @@ interface AdminUser {
   createdAt: string;
 }
 
-interface AdminTransaction {
-  id: string;
-  userId: string;
-  type: string;
-  amount: string;
-  status: string;
-  utrNumber?: string;
-  createdAt: string;
-  user: { whatsappNumber: string };
+interface AdminTransactionData {
+  transaction: {
+    id: string;
+    userId: string;
+    type: string;
+    amount: string;
+    status: string;
+    utrNumber?: string;
+    createdAt: string;
+  };
+  user: { whatsappNumber: string } | null;
 }
 
-interface WithdrawalRequest {
-  id: string;
-  userId: string;
-  amount: string;
-  upiId: string;
-  fullName: string;
-  status: string;
-  createdAt: string;
-  user: { whatsappNumber: string };
+interface WithdrawalRequestData {
+  withdrawalRequest: {
+    id: string;
+    userId: string;
+    amount: string;
+    upiId: string;
+    fullName: string;
+    status: string;
+    createdAt: string;
+  };
+  user: { whatsappNumber: string } | null;
 }
 
 interface Announcement {
@@ -140,12 +144,12 @@ export default function AdminDashboard() {
     enabled: isAuthenticated && user?.isAdmin,
   });
 
-  const { data: transactions = [] } = useQuery<AdminTransaction[]>({
+  const { data: transactionsData = [] } = useQuery<AdminTransactionData[]>({
     queryKey: ["/api/admin/transactions"],
     enabled: isAuthenticated && user?.isAdmin,
   });
 
-  const { data: withdrawalRequests = [] } = useQuery<WithdrawalRequest[]>({
+  const { data: withdrawalRequestsData = [] } = useQuery<WithdrawalRequestData[]>({
     queryKey: ["/api/admin/withdrawal-requests"],
     enabled: isAuthenticated && user?.isAdmin,
   });
@@ -408,8 +412,8 @@ export default function AdminDashboard() {
     });
   };
 
-  const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
-  const pendingWithdrawals = withdrawalRequests.filter(w => w.status === 'pending');
+  const pendingDeposits = transactionsData.filter(t => t.transaction.type === 'deposit' && t.transaction.status === 'pending');
+  const pendingWithdrawals = withdrawalRequestsData.filter(w => w.withdrawalRequest.status === 'pending');
 
   const tabs = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
@@ -597,22 +601,22 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     {pendingDeposits.map((deposit) => (
                       <div 
-                        key={deposit.id} 
+                        key={deposit.transaction.id}
                         className="flex items-center justify-between p-4 border rounded-lg"
-                        data-testid={`card-admin-deposit-${deposit.id}`}
+                        data-testid={`card-admin-deposit-${deposit.transaction.id}`}
                       >
                         <div>
-                          <h3 className="font-semibold">{formatCurrency(deposit.amount)}</h3>
+                          <h3 className="font-semibold">{formatCurrency(deposit.transaction.amount)}</h3>
                           <p className="text-sm text-gray-500">User: {deposit.user?.whatsappNumber}</p>
-                          <p className="text-sm text-gray-500">UTR: {deposit.utrNumber}</p>
-                          <p className="text-xs text-gray-400">{formatDate(deposit.createdAt)}</p>
+                          <p className="text-sm text-gray-500">UTR: {deposit.transaction.utrNumber}</p>
+                          <p className="text-xs text-gray-400">{formatDate(deposit.transaction.createdAt)}</p>
                         </div>
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
-                            onClick={() => approveDepositMutation.mutate({ id: deposit.id, amount: deposit.amount })}
+                            onClick={() => approveDepositMutation.mutate({ id: deposit.transaction.id, amount: deposit.transaction.amount })}
                             disabled={approveDepositMutation.isPending}
-                            data-testid={`button-approve-deposit-${deposit.id}`}
+                            data-testid={`button-approve-deposit-${deposit.transaction.id}`}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Approve
@@ -643,23 +647,23 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     {pendingWithdrawals.map((withdrawal) => (
                       <div 
-                        key={withdrawal.id} 
+                        key={withdrawal.withdrawalRequest.id}
                         className="flex items-center justify-between p-4 border rounded-lg"
-                        data-testid={`card-admin-withdrawal-${withdrawal.id}`}
+                        data-testid={`card-admin-withdrawal-${withdrawal.withdrawalRequest.id}`}
                       >
                         <div>
-                          <h3 className="font-semibold">{formatCurrency(withdrawal.amount)}</h3>
+                          <h3 className="font-semibold">{formatCurrency(withdrawal.withdrawalRequest.amount)}</h3>
                           <p className="text-sm text-gray-500">User: {withdrawal.user?.whatsappNumber}</p>
-                          <p className="text-sm text-gray-500">Name: {withdrawal.fullName}</p>
-                          <p className="text-sm text-gray-500">UPI: {withdrawal.upiId}</p>
-                          <p className="text-xs text-gray-400">{formatDate(withdrawal.createdAt)}</p>
+                          <p className="text-sm text-gray-500">Name: {withdrawal.withdrawalRequest.fullName}</p>
+                          <p className="text-sm text-gray-500">UPI: {withdrawal.withdrawalRequest.upiId}</p>
+                          <p className="text-xs text-gray-400">{formatDate(withdrawal.withdrawalRequest.createdAt)}</p>
                         </div>
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
-                            onClick={() => approveWithdrawalMutation.mutate(withdrawal.id)}
+                            onClick={() => approveWithdrawalMutation.mutate(withdrawal.withdrawalRequest.id)}
                             disabled={approveWithdrawalMutation.isPending}
-                            data-testid={`button-approve-withdrawal-${withdrawal.id}`}
+                            data-testid={`button-approve-withdrawal-${withdrawal.withdrawalRequest.id}`}
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Approve
@@ -667,9 +671,9 @@ export default function AdminDashboard() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => rejectWithdrawalMutation.mutate(withdrawal.id)}
+                            onClick={() => rejectWithdrawalMutation.mutate(withdrawal.withdrawalRequest.id)}
                             disabled={rejectWithdrawalMutation.isPending}
-                            data-testid={`button-reject-withdrawal-${withdrawal.id}`}
+                            data-testid={`button-reject-withdrawal-${withdrawal.withdrawalRequest.id}`}
                           >
                             <XCircle className="h-4 w-4 mr-1" />
                             Reject
