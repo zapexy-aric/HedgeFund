@@ -140,6 +140,24 @@ export const referralEarnings = pgTable("referral_earnings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Mines game table
+export const minesGames = pgTable("mines_games", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  betAmount: decimal("bet_amount", { precision: 10, scale: 2 }).notNull(),
+  mineCount: integer("mine_count").notNull(),
+  mineLocations: jsonb("mine_locations").notNull(), // Array of numbers (tile indexes)
+  revealedTiles: jsonb("revealed_tiles").default('[]'), // Array of numbers (tile indexes)
+  status: varchar("status").default("active"), // active, busted, cashed_out
+  payoutMultiplier: decimal("payout_multiplier", { precision: 10, scale: 4 }).default("1.0000"),
+  cashedOutAmount: decimal("cashed_out_amount", { precision: 10, scale: 2 }),
+  serverSeed: varchar("server_seed", { length: 64 }),
+  serverSeedHash: varchar("server_seed_hash", { length: 64 }).notNull(),
+  clientSeed: varchar("client_seed", { length: 64 }).notNull(),
+  nonce: integer("nonce").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -193,6 +211,11 @@ export const insertReferralEarningSchema = createInsertSchema(
   createdAt: true,
 });
 
+export const insertMinesGameSchema = createInsertSchema(minesGames).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
@@ -205,6 +228,7 @@ export type Transaction = typeof transactions.$inferSelect;
 export type AdminSetting = typeof adminSettings.$inferSelect;
 export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
 export type ReferralEarning = typeof referralEarnings.$inferSelect;
+export type MinesGame = typeof minesGames.$inferSelect;
 
 export type InsertPartner = z.infer<typeof insertPartnerSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
@@ -217,3 +241,4 @@ export type InsertWithdrawalRequest = z.infer<
 export type InsertReferralEarning = z.infer<
   typeof insertReferralEarningSchema
 >;
+export type InsertMinesGame = z.infer<typeof insertMinesGameSchema>;

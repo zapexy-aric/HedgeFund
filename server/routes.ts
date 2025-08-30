@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./auth";
+import { createMinesGame, revealMinesTile, cashoutMinesGame } from "./games";
 import {
   insertTransactionSchema,
   insertWithdrawalRequestSchema,
@@ -24,6 +25,7 @@ const purchasePlanSchema = z.object({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
 
   // Auth routes are now handled in auth.ts
 
@@ -301,6 +303,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // --- Game Routes ---
+
+  app.post('/api/games/mines/bet', isAuthenticated, async (req: any, res) => {
+    try {
+      const game = await createMinesGame(req.user.id, req.body);
+      res.json(game);
+    } catch (error) {
+      console.error("Error placing mines bet:", error);
+      res.status(500).json({ message: "Failed to place bet" });
+    }
+  });
+
+  app.post('/api/games/mines/reveal', isAuthenticated, async (req: any, res) => {
+    try {
+      const { gameId, tileIndex } = req.body;
+      const result = await revealMinesTile(req.user.id, gameId, tileIndex);
+      res.json(result);
+    } catch (error) {
+      console.error("Error revealing mines tile:", error);
+      res.status(500).json({ message: "Failed to reveal tile" });
+    }
+  });
+
+  app.post('/api/games/mines/cashout', isAuthenticated, async (req: any, res) => {
+    try {
+      const { gameId } = req.body;
+      const result = await cashoutMinesGame(req.user.id, gameId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error cashing out from mines:", error);
+      res.status(500).json({ message: "Failed to cash out" });
+    }
+  });
 
   // Admin settings
   app.get('/api/admin/qr-code', async (req, res) => {

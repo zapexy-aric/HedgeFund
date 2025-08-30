@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin";
+import MinesPage from "@/pages/mines";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
+          <Route path="/games/mines" component={MinesPage} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/" component={Dashboard} />
         </>
